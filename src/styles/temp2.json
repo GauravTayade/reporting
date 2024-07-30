@@ -1,0 +1,554 @@
+{
+  "snapshots": [
+    {
+      "snapshot": "2024.03.23-.ds-logs-system.system-tcw-2024.02.13-000124-filebeat-45days-joh5ygu7rmgm8hihounbiw",
+      "uuid": "a2ddYApDSveajoELhnyEWA",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.02.13-000124"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.02.13-000124": {
+          "shard_count": 1,
+          "size": "158.9mb",
+          "size_in_bytes": 166715969,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-03-23T20:17:37.706Z",
+      "start_time_in_millis": 1711225057706,
+      "end_time": "2024-03-23T20:17:48.912Z",
+      "end_time_in_millis": 1711225068912,
+      "duration": "11.2s",
+      "duration_in_millis": 11206,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.03.30-.ds-logs-system.system-tcw-2024.02.20-000127-filebeat-45days-gwbdlfqms-yuvp0hin6beq",
+      "uuid": "DLay34d7QPubNPQbf4jUfw",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.02.20-000127"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.02.20-000127": {
+          "shard_count": 1,
+          "size": "158.9mb",
+          "size_in_bytes": 166632043,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-03-30T20:27:35.368Z",
+      "start_time_in_millis": 1711830455368,
+      "end_time": "2024-03-30T20:27:46.773Z",
+      "end_time_in_millis": 1711830466773,
+      "duration": "11.4s",
+      "duration_in_millis": 11405,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.04.06-.ds-logs-system.system-tcw-2024.02.27-000130-filebeat-45days-9sahqiwitz67p9gduidkyq",
+      "uuid": "sIWIN5dmREeZSGa09NHCHA",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.02.27-000130"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.02.27-000130": {
+          "shard_count": 1,
+          "size": "154.4mb",
+          "size_in_bytes": 161929913,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-04-06T20:37:35.707Z",
+      "start_time_in_millis": 1712435855707,
+      "end_time": "2024-04-06T20:38:55.369Z",
+      "end_time_in_millis": 1712435935369,
+      "duration": "1.3m",
+      "duration_in_millis": 79662,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.04.12-.ds-logs-system.system-tcw-2024.03.12-000136-filebeat-45days-_pnn0uqjsa6m2u5-3-ajeg",
+      "uuid": "kOwTCSI5TY22fpvSHRwr0g",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.03.12-000136"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.03.12-000136": {
+          "shard_count": 1,
+          "size": "160.2mb",
+          "size_in_bytes": 168027071,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-04-12T18:28:25.906Z",
+      "start_time_in_millis": 1712946505906,
+      "end_time": "2024-04-13T15:13:26.869Z",
+      "end_time_in_millis": 1713021206869,
+      "duration": "20.7h",
+      "duration_in_millis": 74700963,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.04.18-.ds-logs-system.system-tcw-2024.04.02-000145-365-days-logs-bp4ergwssjqm_65iibgagq",
+      "uuid": "HNFLU0CWTp2cOWV527JHFQ",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.04.02-000145"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.04.02-000145": {
+          "shard_count": 1,
+          "size": "159mb",
+          "size_in_bytes": 166755181,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-04-18T05:07:35.802Z",
+      "start_time_in_millis": 1713416855802,
+      "end_time": "2024-04-22T04:03:45.132Z",
+      "end_time_in_millis": 1713758625132,
+      "duration": "3.9d",
+      "duration_in_millis": 341769330,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.04.19-.ds-logs-system.system-tcw-2024.04.09-000148-365-days-logs-szw337n2ry2logsysn54dw",
+      "uuid": "cBLad2Z_TWuXzApxGrtlyQ",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.04.09-000148"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.04.09-000148": {
+          "shard_count": 1,
+          "size": "73.5mb",
+          "size_in_bytes": 77156163,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-04-19T21:37:45.798Z",
+      "start_time_in_millis": 1713562665798,
+      "end_time": "2024-04-19T21:37:48.000Z",
+      "end_time_in_millis": 1713562668000,
+      "duration": "2.2s",
+      "duration_in_millis": 2202,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.01-.ds-logs-system.system-tcw-2024.05.22-000162-365-days-logs-hcj1b8wxtykbpdl8nhvagq",
+      "uuid": "vJCAAmoNSJudtdAmtnJ85w",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.05.22-000162"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.05.22-000162": {
+          "shard_count": 1,
+          "size": "68mb",
+          "size_in_bytes": 71334938,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-06-01T18:47:38.134Z",
+      "start_time_in_millis": 1717267658134,
+      "end_time": "2024-06-01T18:57:21.634Z",
+      "end_time_in_millis": 1717268241634,
+      "duration": "9.7m",
+      "duration_in_millis": 583500,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.04-.ds-logs-system.system-tcw-2024.05.25-000163-365-days-logs-z2gs6r51sx6evitww3u-_a",
+      "uuid": "lMX6VEtlTFKBplWelZRyDQ",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.05.25-000163"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.05.25-000163": {
+          "shard_count": 1,
+          "size": "61mb",
+          "size_in_bytes": 63977940,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-06-05T20:15:31.159Z",
+      "start_time_in_millis": 1717618531159,
+      "end_time": "2024-06-05T21:04:53.172Z",
+      "end_time_in_millis": 1717621493172,
+      "duration": "49.3m",
+      "duration_in_millis": 2962013,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.04.12-.ds-logs-system.system-tcw-2024.03.26-000142-filebeat-45days-x1dtww88t0qpejgct-pxqa",
+      "uuid": "R2Y4oT0-SZ6n-ejuM7WCzw",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.03.26-000142"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.03.26-000142": {
+          "shard_count": 1,
+          "size": "154.2mb",
+          "size_in_bytes": 161756295,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-06-05T23:33:11.070Z",
+      "start_time_in_millis": 1717630391070,
+      "end_time": "2024-06-05T23:46:53.032Z",
+      "end_time_in_millis": 1717631213032,
+      "duration": "13.6m",
+      "duration_in_millis": 821962,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.04.12-.ds-logs-system.system-tcw-2024.03.05-000133-filebeat-45days-otjswswut0q8q0dxlsgvbg",
+      "uuid": "uxFfOgGfTUWbsVbjf9kzyQ",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.03.05-000133"
+      ],
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "PARTIAL",
+      "start_time": "2024-06-06T02:40:21.104Z",
+      "start_time_in_millis": 1717641621104,
+      "end_time": "2024-06-06T03:31:58.562Z",
+      "end_time_in_millis": 1717644718562,
+      "duration": "51.6m",
+      "duration_in_millis": 3097458,
+      "failures": [
+        {
+          "index": ".ds-logs-system.system-tcw-2024.03.05-000133",
+          "index_uuid": "1QJiUKcPQAa3Lbt2bTidLQ",
+          "shard_id": 0,
+          "reason": "IndexShardSnapshotFailedException[Failed to write shard level snapshot metadata for [2024.04.12-.ds-logs-system.system-tcw-2024.03.05-000133-filebeat-45days-otjswswut0q8q0dxlsgvbg/uxFfOgGfTUWbsVbjf9kzyQ] to [index-l7pEwIffSUaRRUrFFHRqUA]]; nested: IOException[Unable to upload object [indices/qdNX2T5JQOW4aNQlqQ8kug/0/index-l7pEwIffSUaRRUrFFHRqUA] using a single upload]; nested: SdkClientException[Unable to execute HTTP request: a2nsiemdata.s3.ca-central-1.wasabisys.com]; nested: UnknownHostException[a2nsiemdata.s3.ca-central-1.wasabisys.com]",
+          "node_id": "e8cS3k0LTHq5oKHNV_dT_Q",
+          "status": "INTERNAL_SERVER_ERROR"
+        }
+      ],
+      "shards": {
+        "total": 1,
+        "failed": 1,
+        "successful": 0
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.06-.ds-logs-system.system-tcw-2024.02.13-000124-365-days-logs-jf7mhvwsr8mpf-t0hogoyq",
+      "uuid": "SZdQjVQxQECOxgxB4gNXGw",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.02.13-000124"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.02.13-000124": {
+          "shard_count": 1,
+          "size": "158.9mb",
+          "size_in_bytes": 166715969,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-06-06T03:24:33.635Z",
+      "start_time_in_millis": 1717644273635,
+      "end_time": "2024-06-06T05:01:12.206Z",
+      "end_time_in_millis": 1717650072206,
+      "duration": "1.6h",
+      "duration_in_millis": 5798571,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.06-.ds-logs-system.system-tcw-2024.02.20-000127-365-days-logs-9vgs9jggrnk1csxubf1ltw",
+      "uuid": "QX0tFte7Q2mJFjhv-RglbA",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.02.20-000127"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.02.20-000127": {
+          "shard_count": 1,
+          "size": "158.9mb",
+          "size_in_bytes": 166632043,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-06-06T03:33:52.436Z",
+      "start_time_in_millis": 1717644832436,
+      "end_time": "2024-06-06T05:01:21.012Z",
+      "end_time_in_millis": 1717650081012,
+      "duration": "1.4h",
+      "duration_in_millis": 5248576,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.06-.ds-logs-system.system-tcw-2024.02.27-000130-365-days-logs-eih4xeg0r2u9gpozt6139g",
+      "uuid": "wgf1vClcTVGAAakqq6E5eA",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.02.27-000130"
+      ],
+      "index_details": {
+        ".ds-logs-system.system-tcw-2024.02.27-000130": {
+          "shard_count": 1,
+          "size": "154.4mb",
+          "size_in_bytes": 161929913,
+          "max_segments_per_shard": 1
+        }
+      },
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "SUCCESS",
+      "start_time": "2024-06-06T03:43:47.752Z",
+      "start_time_in_millis": 1717645427752,
+      "end_time": "2024-06-06T05:01:32.019Z",
+      "end_time_in_millis": 1717650092019,
+      "duration": "1.2h",
+      "duration_in_millis": 4664267,
+      "failures": [],
+      "shards": {
+        "total": 1,
+        "failed": 0,
+        "successful": 1
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.06-.ds-logs-system.system-tcw-2024.03.12-000136-365-days-logs-xjj8e7netakgeph1aqidcq",
+      "uuid": "zr1LuH3eSdm6Hks2g5PPjg",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.03.12-000136"
+      ],
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "PARTIAL",
+      "start_time": "2024-06-06T17:55:26.169Z",
+      "start_time_in_millis": 1717696526169,
+      "end_time": "2024-06-06T18:02:12.949Z",
+      "end_time_in_millis": 1717696932949,
+      "duration": "6.7m",
+      "duration_in_millis": 406780,
+      "failures": [
+        {
+          "index": ".ds-logs-system.system-tcw-2024.03.12-000136",
+          "index_uuid": "IuMtKPSaRHa-g6dAsKa2tQ",
+          "shard_id": 0,
+          "reason": "SdkClientException[Unable to execute HTTP request: a2nsiemdata.s3.ca-central-1.wasabisys.com]; nested: UnknownHostException[a2nsiemdata.s3.ca-central-1.wasabisys.com]",
+          "node_id": "tnkbOBt5TzKN_50oKVbwfQ",
+          "status": "INTERNAL_SERVER_ERROR"
+        }
+      ],
+      "shards": {
+        "total": 1,
+        "failed": 1,
+        "successful": 0
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.06-.ds-logs-system.system-tcw-2024.03.05-000133-365-days-logs-pfwxyjioqvqlmbe0efmz6g",
+      "uuid": "RCjLEphNSmqxcPJNmcCgeQ",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.03.05-000133"
+      ],
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "PARTIAL",
+      "start_time": "2024-06-06T17:55:26.369Z",
+      "start_time_in_millis": 1717696526369,
+      "end_time": "2024-06-06T18:09:05.113Z",
+      "end_time_in_millis": 1717697345113,
+      "duration": "13.6m",
+      "duration_in_millis": 818744,
+      "failures": [
+        {
+          "index": ".ds-logs-system.system-tcw-2024.03.05-000133",
+          "index_uuid": "1QJiUKcPQAa3Lbt2bTidLQ",
+          "shard_id": 0,
+          "reason": "IndexShardSnapshotFailedException[failed to list blobs]; nested: IOException[Exception when listing blobs by prefix [index-]]; nested: SdkClientException[Unable to execute HTTP request: a2nsiemdata.s3.ca-central-1.wasabisys.com]; nested: UnknownHostException[a2nsiemdata.s3.ca-central-1.wasabisys.com]",
+          "node_id": "tnkbOBt5TzKN_50oKVbwfQ",
+          "status": "INTERNAL_SERVER_ERROR"
+        }
+      ],
+      "shards": {
+        "total": 1,
+        "failed": 1,
+        "successful": 0
+      },
+      "feature_states": []
+    },
+    {
+      "snapshot": "2024.06.06-.ds-logs-system.system-tcw-2024.03.26-000142-365-days-logs-fzhc1smdtj2nwkgfxiwhtg",
+      "uuid": "Ba-hxCJASWyp_SEjvM0Ckw",
+      "repository": "Repository_Wasabi",
+      "version_id": 8080299,
+      "version": "8.8.2",
+      "indices": [
+        ".ds-logs-system.system-tcw-2024.03.26-000142"
+      ],
+      "data_streams": [],
+      "include_global_state": false,
+      "state": "IN_PROGRESS",
+      "start_time": "2024-06-06T17:55:26.569Z",
+      "start_time_in_millis": 1717696526569,
+      "end_time": "1970-01-01T00:00:00.000Z",
+      "end_time_in_millis": 0,
+      "duration": "0s",
+      "duration_in_millis": 0,
+      "failures": [
+        {
+          "index": ".ds-logs-system.system-tcw-2024.03.26-000142",
+          "index_uuid": "gdoN7WThR1qqKLmz3UXQ2Q",
+          "shard_id": 0,
+          "reason": "SdkClientException[Unable to execute HTTP request: a2nsiemdata.s3.ca-central-1.wasabisys.com]; nested: UnknownHostException[a2nsiemdata.s3.ca-central-1.wasabisys.com]",
+          "node_id": "e8cS3k0LTHq5oKHNV_dT_Q",
+          "status": "INTERNAL_SERVER_ERROR"
+        }
+      ],
+      "shards": {
+        "total": 1,
+        "failed": 1,
+        "successful": 0
+      },
+      "feature_states": []
+    }
+  ],
+  "total": 16,
+  "remaining": 0
+}
