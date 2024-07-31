@@ -49,7 +49,7 @@ const ComponentTopNetworkStats = (props) =>{
               </div>
               <div className="w-2/3 h-full flex-col">
                 <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
-                  <h2 className="text-xl"><b>Source IP's</b> Detected</h2>
+                  <h2 className="text-xl"><b>Source IP&apos;s</b> Detected</h2>
                 </div>
                 <div className="w-full h-1/2 flex-col items-center">
                   <div className="w-full h-1/2 flex items-center">
@@ -103,7 +103,7 @@ const ComponentTopNetworkStats = (props) =>{
               </div>
               <div className="w-2/3 h-full flex-col">
                 <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
-                  <h2 className="text-xl"><b>Destination IP's</b> Detected</h2>
+                  <h2 className="text-xl"><b>Destination IP&apos;s</b> Detected</h2>
                 </div>
                 <div className="w-full h-1/2 flex-col items-center">
                   <div className="w-full h-1/2 flex items-center">

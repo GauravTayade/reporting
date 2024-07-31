@@ -17,9 +17,9 @@ const ComponentAnalyzingGateway = (props) => {
 
   //get user context data
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer[0].customerId
-  const reportStartDate = userDataContext.selectedCustomer[0].reportStartDate
-  const reportEndDate = userDataContext.selectedCustomer[0].reportEndDate
+  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
+  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
 
   //useState variables to store state data
   const [result, setResult] = useState({})
@@ -643,7 +643,7 @@ const ComponentAnalyzingGateway = (props) => {
                       {result.total_firewall_active_blade_count ?
                         result.total_firewall_active_blade_count.map((blade,index)=>{
                           return (
-                            <div className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
+                            <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
                               <div className="w-2/3 h-full flex items-center justify-center text-sm text-white">{blade.active_blade}</div>
                               <div className="w-1/3 h-full flex items-center justify-center text-sm text-white">{formatNumber(blade.bladecount)}</div>
                             </div>
@@ -670,7 +670,7 @@ const ComponentAnalyzingGateway = (props) => {
                       {result.top_external_threats_data?
                         result.top_external_threats_data.map((threat,index)=> {
                           return (
-                            <div className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
+                            <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
                               <div
                                 className="w-2/3 h-full flex items-center justify-center text-sm text-white">{threat.key}</div>
                               <div
@@ -709,9 +709,9 @@ const ComponentAnalyzingGateway = (props) => {
                         </div>
                       </div>
                       {ipsHitsAnalysis ?
-                        ipsHitsAnalysis.map(attack => {
+                        ipsHitsAnalysis.map((attack,index) => {
                           return (
-                            <div className="h-12 flex text-white border-b-2">
+                            <div key={index} className="h-12 flex text-white border-b-2">
                               <div
                                 className="h-12 bg-white/10 w-1/3 flex items-center justify-center mr-1">{attack.source}</div>
                               <div

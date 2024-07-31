@@ -9,7 +9,10 @@ const ComponentNetworkStats = () =>{
 
   //get user context data
   const userDataContext = useContext(userContext)
-  const customer_Id = userDataContext.selectedCustomer[0].customerId
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
+  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
 
   const [customerFirewallList, setCustomerFirewallList] = useState([])
   const [topNetworkProtocol, setTopNetworkProtocol] = useState([]);
@@ -23,8 +26,9 @@ const ComponentNetworkStats = () =>{
 
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
-        customerId:customer_Id,
-        interval:30
+        customerId:customerId,
+        startDate: reportStartDate,
+        endDate: reportEndDate
       }
     }).then(async response=>{
       let customerFirewallList = []
@@ -34,7 +38,8 @@ const ComponentNetworkStats = () =>{
       axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getFirewallTopNetworkProtocols",{
         params:{
           firewallId:customerFirewallList.join(""),
-          interval:30
+          startDate: reportStartDate,
+          endDate: reportEndDate
         }
       }).then(response=>{
         setTopNetworkProtocol([...response.data])
@@ -48,8 +53,9 @@ const ComponentNetworkStats = () =>{
   const getFirewallTopNetworkRules = async () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
-        customerId:customer_Id,
-        interval:30
+        customerId:customerId,
+        startDate: reportStartDate,
+        endDate: reportEndDate
       }
     }).then(async response=>{
       let customerFirewallList = []
@@ -59,7 +65,8 @@ const ComponentNetworkStats = () =>{
       axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getFirewallTopNetworkRules",{
         params:{
           firewallId:customerFirewallList.join(""),
-          interval:30
+          startDate: reportStartDate,
+          endDate: reportEndDate
         }
       }).then(response=>{
         setTopNetworkRules([...response.data])

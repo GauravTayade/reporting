@@ -114,10 +114,10 @@ const Dashboard = (props) => {
           </div>
           <div className="row-span-12 col-span-2 overflow-y-scroll no-scrollbar">
             {customerList.length !== 0 ?
-              customerList.map(customer => {
+              customerList.map((customer,index) => {
                 if (selectedCustomers.length !== 0 && selectedCustomers.filter(ct => ct.customerName === customer.name).length > 0) {
                   return (
-                    <div className="h-16 w-full p-1">
+                    <div key={index} className="h-16 w-full p-1">
                       <div className="w-full h-full bg-white bg-opacity-5 shadow-lg flex rounded-lg">
                         <div className="h-full w-1/6 pr-1">
                           <div className="w-full h-full flex justify-center items-center">
@@ -139,7 +139,7 @@ const Dashboard = (props) => {
                   )
                 } else {
                   return (
-                    <div className="h-16 w-full p-1">
+                    <div key={index} className="h-16 w-full p-1">
                       <div className="w-full h-full bg-white bg-opacity-5 shadow-lg flex rounded-lg">
                         <div className="h-full w-1/6 pr-1">
                           <div className="w-full h-full flex justify-center items-center">
@@ -168,10 +168,10 @@ const Dashboard = (props) => {
           <div className="row-span-12 col-span-10">
             <div className="w-full h-full flex flex-wrap overflow-y-scroll no-scrollbar">
               {customerList.length !== 0 ?
-                customerList.map(customer => {
+                customerList.map((customer,index) => {
                   if (selectedCustomers.length !== 0 && selectedCustomers.filter(ct => ct.customerName === customer.name).length > 0) {
                     return (
-                      <div className="w-3/12 h-2/6 p-1">
+                      <div key={index} className="w-3/12 h-2/6 p-1">
                         <div className="w-full h-full bg-white bg-opacity-5 shadow-lg flex-col rounded-lg">
                           <div className="w-full h-5/6 flex-col items-center">
                             <div className="w-full h-1/6 px-2 bg-white/20 rounded-lg">
@@ -201,7 +201,7 @@ const Dashboard = (props) => {
                     )
                   } else {
                     return (
-                      <div className="w-3/12 h-2/6 p-1">
+                      <div key={index} className="w-3/12 h-2/6 p-1">
                         <div className="w-full h-full bg-white bg-opacity-5 shadow-lg flex-col rounded-lg">
                           <div className="w-full h-5/6 flex-col items-center">
                             <div className="w-full h-1/6 px-2 bg-white/20 rounded-lg">

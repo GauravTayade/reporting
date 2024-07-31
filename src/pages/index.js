@@ -1,11 +1,11 @@
-import ComponentDataSource from "@/pages/Tarion/ComponentDataSource";
-import ComponentDataManifest from "@/pages/Tarion/ComponentDataManifest";
-import ComponentAnalyzingGateway from "@/pages/Tarion/ComponentAnalyzingGateway";
-import ComponentAnalyzingServer from "@/pages/Tarion/ComponentAnalyzingServer";
-import ComponentEndpointProtection from "@/pages/Tarion/ComponentEndpointProtection";
-import ComponentAdvisoryWatchDog from "@/pages/Tarion/ComponentAdvisoryWatchDog";
-import ComponentGlobalTrafficAnalysis from "@/pages/Tarion/ComponentGlobalTrafficAnalysis";
-import ComponentTopNetworkStats from "@/pages/Tarion/ComponentTopNetworkStats";
+import ComponentDataSource from "@/Components/Tarion/ComponentDataSource";
+import ComponentDataManifest from "@/Components/Tarion/ComponentDataManifest";
+import ComponentAnalyzingGateway from "@/Components/Tarion/ComponentAnalyzingGateway";
+import ComponentAnalyzingServer from "@/Components/Tarion/ComponentAnalyzingServer";
+import ComponentEndpointProtection from "@/Components/Tarion/ComponentEndpointProtection";
+import ComponentAdvisoryWatchDog from "@/Components/Tarion/ComponentAdvisoryWatchDog";
+import ComponentGlobalTrafficAnalysis from "@/Components/Tarion/ComponentGlobalTrafficAnalysis";
+import ComponentTopNetworkStats from "@/Components/Tarion/ComponentTopNetworkStats";
 import Dashboard from "@/pages/Dashboard";
 import userContext from "@/context/userContext";
 import Login from "@/pages/Login";
@@ -26,7 +26,7 @@ const Home= ()=>{
               {/*<ComponentDataManifest/>*/}
               {/*<ComponentAnalyzingGateway/>*/}
               {/*<ComponentGlobalTrafficAnalysis/>*/}
-              {/*<ComponentNetworkStats/>*/}
+              {/*<ComponentTopNetworkStats/>*/}
               {/*<ComponentAnalyzingServer/>*/}
               {/*<ComponentEndpointProtection/>*/}
               {/*<ComponentAdvisoryWatchDog/>*/}

@@ -105,7 +105,7 @@ const ComponentEndpointProtection = (props) => {
                     <div className="w-1/4 h-full p-1">
                       <div className="w-full h-full flex-col">
                         <div className="w-full h-1/3 bg-white bg-opacity-10 shadow">
-                          <h1 className="font-semibold text-center text-white">IP's</h1>
+                          <h1 className="font-semibold text-center text-white">IP&apos;s</h1>
                         </div>
                         <div className="w-full h-2/3 flex items-center justify-center bg-white bg-opacity-5 shadow">
                           <h1 className="font-bold text-white text-3xl">18</h1></div>
@@ -114,7 +114,7 @@ const ComponentEndpointProtection = (props) => {
                     <div className="w-1/4 h-full p-1">
                       <div className="w-full h-full flex-col">
                         <div className="w-full h-1/3 bg-white bg-opacity-10 shadow">
-                          <h1 className="font-semibold text-center text-white">URL's</h1>
+                          <h1 className="font-semibold text-center text-white">URL&apos;s</h1>
                         </div>
                         <div className="w-full h-2/3 flex items-center justify-center bg-white bg-opacity-5 shadow">
                           <h1 className="font-bold text-white text-3xl">30</h1></div>
@@ -157,7 +157,7 @@ const ComponentEndpointProtection = (props) => {
                     <div className="w-1/4 h-full p-1">
                       <div className="w-full h-full flex-col">
                         <div className="w-full h-1/3 bg-white bg-opacity-10 shadow">
-                          <h1 className="font-semibold text-center text-white">IP's</h1>
+                          <h1 className="font-semibold text-center text-white">IP&apos;s</h1>
                         </div>
                         <div className="w-full h-2/3 flex items-center justify-center bg-white bg-opacity-5 shadow">
                           <h1 className="font-bold text-white text-3xl">18</h1></div>
@@ -166,7 +166,7 @@ const ComponentEndpointProtection = (props) => {
                     <div className="w-1/4 h-full p-1">
                       <div className="w-full h-full flex-col">
                         <div className="w-full h-1/3 bg-white bg-opacity-10 shadow">
-                          <h1 className="font-semibold text-center text-white">URL's</h1>
+                          <h1 className="font-semibold text-center text-white">URL&apos;s</h1>
                         </div>
                         <div className="w-full h-2/3 flex items-center justify-center bg-white bg-opacity-5 shadow">
                           <h1 className="font-bold text-white text-3xl">30</h1></div>
@@ -207,7 +207,7 @@ const ComponentEndpointProtection = (props) => {
                       <div className="w-full h-2/6 flex gap-2">
                         <div className="w-2/5 h-full"></div>
                         <div className="w-1/5 h-full flex items-center justify-center">
-                          <h1 className="font-semibold text-xl">IOC's</h1>
+                          <h1 className="font-semibold text-xl">IOC&apos;s</h1>
                         </div>
                         <div className="w-1/5 h-full flex items-center justify-center">
                           <h1 className="font-semibold text-xl">Rules</h1>

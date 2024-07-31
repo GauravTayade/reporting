@@ -25,9 +25,9 @@ const ComponentAnalyzingServer = (props) => {
   const [pieTopTargetHostsRecordCount, setPieTopTargetHostsRecordCount] = useState()
 
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer[0].customerId
-  const reportStartDate = userDataContext.selectedCustomer[0].reportStartDate
-  const reportEndDate = userDataContext.selectedCustomer[0].reportEndDate
+  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
+  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
 
   let data = {
     total_subscriptions_count: 0,   //find-endpoint-count-total
@@ -699,7 +699,7 @@ const ComponentAnalyzingServer = (props) => {
                       {pieMostActiveServers ?
                         pieMostActiveServers.map((server, index) => {
                           return (
-                            <div className="w-full h-10 p-1">
+                            <div key={index} className="w-full h-10 p-1">
                               <div
                                 className="w-full h-full  flex items-center justify-center rounded-lg"
                                 style={{backgroundColor: chartBackgroundColorsListOpacity40[index]}}>

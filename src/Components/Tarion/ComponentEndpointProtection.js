@@ -24,9 +24,9 @@ const ComponentEndpointProtection = (props) =>{
   }
 
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer[0].customerId
-  const reportStartDate = userDataContext.selectedCustomer[0].reportStartDate
-  const reportEndDate = userDataContext.selectedCustomer[0].reportEndDate
+  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
+  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
 
   const [result,setResult] = useState()
   const [deviceType,setDeviceType] = useState()

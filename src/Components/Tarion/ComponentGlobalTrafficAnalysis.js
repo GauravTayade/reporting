@@ -38,15 +38,16 @@ const ComponentGlobalTrafficAnalysis = (props) =>{
 
   //get user context data
   const userDataContext = useContext(userContext)
-  const customer_Id = userDataContext.selectedCustomer[0].customerId
-  const reportStartDate = userDataContext.selectedCustomer[0].reportStartDate
-  const reportEndDate = userDataContext.selectedCustomer[0].reportEndDate
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
+  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
 
   //get ips traffic count
   const getFirewallIPScount = async ()=>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
-        customerId:customer_Id,
+        customerId:customerId,
       }
     }).then(async response=>{
       let customerFirewallList = []
@@ -92,7 +93,7 @@ const ComponentGlobalTrafficAnalysis = (props) =>{
 
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
-        customerId:customer_Id,
+        customerId:customerId,
         interval:30
       }
     }).then(async response=>{
@@ -117,7 +118,7 @@ const ComponentGlobalTrafficAnalysis = (props) =>{
   const getFirewallTopNetworkRules = async () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
-        customerId:customer_Id,
+        customerId:customerId,
         interval:30
       }
     }).then(async response=>{
@@ -437,7 +438,7 @@ const ComponentGlobalTrafficAnalysis = (props) =>{
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
-                    <h2 className="text-xl text-white"><b>Source IP's</b> Detected</h2>
+                    <h2 className="text-xl text-white"><b>Source IP&apos;s</b> Detected</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
                     <div className="w-1/2 h-full flex items-center justify-center">
@@ -497,7 +498,7 @@ const ComponentGlobalTrafficAnalysis = (props) =>{
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
-                    <h2 className="text-xl text-white"><b>Destination IP's</b> Detected</h2>
+                    <h2 className="text-xl text-white"><b>Destination IP&apos;s</b> Detected</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
                     <div className="w-1/2 h-full flex items-center justify-center">
