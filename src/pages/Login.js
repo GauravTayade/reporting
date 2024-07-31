@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
 
 const Login = (props) => {
@@ -26,6 +26,10 @@ const Login = (props) => {
       }
     }
   }
+
+  useEffect(() => {
+    console.log("next js app is working")
+  }, []);
 
   return(
     <div className="w-screen h-screen">
