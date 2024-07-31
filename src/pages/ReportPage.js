@@ -21,12 +21,12 @@ const ReportPage = ()=>{
           <div className="w-full h-full overflow-y-scroll no-scrollbar">
             <userContext.Provider value={userDataContext}>
               <ComponentDataSource/>
-              {/*<ComponentDataManifest/>*/}
-              {/*<ComponentAnalyzingGateway/>*/}
-              {/*<ComponentGlobalTrafficAnalysis/>*/}
-              {/*<ComponentNetworkStats/>*/}
-              {/*<ComponentAnalyzingServer/>*/}
-              {/*<ComponentEndpointProtection/>*/}
+              <ComponentDataManifest/>
+              <ComponentAnalyzingGateway/>
+              <ComponentGlobalTrafficAnalysis/>
+              <ComponentNetworkStats/>
+              <ComponentAnalyzingServer/>
+              <ComponentEndpointProtection/>
               {/*<ComponentAdvisoryWatchDog/>*/}
             </userContext.Provider>
           </div>
