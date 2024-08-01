@@ -1,9 +1,9 @@
-import ComponentPieChart from "@/Components/charts/ComponentPieChart";
+import ComponentPieChart from "@/components/charts/ComponentPieChart";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faCaretUp} from "@fortawesome/free-solid-svg-icons";
 import {useContext, useEffect, useState} from "react";
 import axios from "axios";
-import ComponentHorizontalBarChart from "@/Components/charts/ComponentHorizontalBarChart";
+import ComponentHorizontalBarChart from "@/components/charts/ComponentHorizontalBarChart";
 import userContext from "@/context/userContext";
 import {
   chartBackgroundColorsList,

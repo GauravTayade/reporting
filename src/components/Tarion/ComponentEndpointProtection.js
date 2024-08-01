@@ -1,11 +1,11 @@
-import ComponentPieChart from "@/Components/charts/ComponentPieChart";
+import ComponentPieChart from "@/components/charts/ComponentPieChart";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowUp, faCaretUp} from "@fortawesome/free-solid-svg-icons";
 import {useContext, useEffect, useState} from "react";
 import userContext from "@/context/userContext";
 import axios from "axios"
-import {Editor, EditorState} from "draft-js"
-import 'draft-js/dist/Draft.css'
+// import {Editor, EditorState} from "draft-js"
+// import 'draft-js/dist/Draft.css'
 
 
 const ComponentEndpointProtection = (props) =>{
@@ -30,11 +30,11 @@ const ComponentEndpointProtection = (props) =>{
 
   const [result,setResult] = useState()
   const [deviceType,setDeviceType] = useState()
-  const [editorState,setEditorState] = useState(()=>EditorState.createEmpty())
+  // const [editorState,setEditorState] = useState(()=>EditorState.createEmpty())
 
   const getEDRDeviceTypes = async ()=>{
     let deviceTypesTemp={}
-    await axios.post("http://10.3.22.37:4434/api/v1/endpoint/subscriptions",{
+    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/subscriptions",{
       "index": "tarion-checkpointsba"
     })
       .then(response=>{
@@ -523,7 +523,8 @@ const ComponentEndpointProtection = (props) =>{
                     </div>
                     <div className="h-5/6 w-full">
                       <div className="w-full h-full">
-                        <Editor editorState={editorState} onChange={setEditorState} userSelect="none" contentEditable={false} />
+                        <input type="text" name="comments"/>
+                        {/*<Editor editorState={editorState} onChange={setEditorState} userSelect="none" contentEditable={false} />*/}
                         {/*<ul className="list-disc p-5">*/}
                         {/*  <li>We have observed an upward trend on the total log ingestion.</li>*/}
                         {/*  <li>We observed the use of attack type “Apache OFBiz Authentication Bypass (CVE-2023-51467)”*/}

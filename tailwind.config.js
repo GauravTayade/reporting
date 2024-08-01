@@ -3,9 +3,9 @@ const {join} = require('path');
 
 module.exports = {
   content: [
-    join(__dirname,"./src/pages/**/*.{js,ts,jsx,tsx,mdx,html}"),
-    join(__dirname,"./src/Components/**/*.{js,ts,jsx,tsx,mdx,html}"),
-    join(__dirname,"./src/app/**/*.{js,ts,jsx,tsx,mdx,html}"),
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {

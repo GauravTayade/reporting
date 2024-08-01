@@ -1,4 +1,4 @@
-import ComponentPieChart from "@/Components/charts/ComponentPieChart";
+import ComponentPieChart from "@/components/charts/ComponentPieChart";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faCaretDown, faCaretUp} from "@fortawesome/free-solid-svg-icons";
 

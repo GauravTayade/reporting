@@ -1,13 +1,13 @@
 import {useContext, useEffect} from "react";
 import userContext from "@/context/userContext";
 import dynamic from "next/dynamic";
-const ComponentDataSource = dynamic(() => import("@/Components/Tarion/ComponentDataSource"))
-const ComponentDataManifest = dynamic(() => import("@/Components/Tarion/ComponentDataManifest"))
-const ComponentAnalyzingGateway = dynamic(() => import("@/Components/Tarion/ComponentAnalyzingGateway"))
-const ComponentGlobalTrafficAnalysis = dynamic(() => import("@/Components/Tarion/ComponentGlobalTrafficAnalysis"))
-const ComponentNetworkStats = dynamic(() => import("@/Components/Tarion/ComponentNetworkStats"))
-const ComponentAnalyzingServer = dynamic(() => import("@/Components/Tarion/ComponentAnalyzingServer"))
-const ComponentEndpointProtection = dynamic(() => import("@/Components/Tarion/ComponentEndpointProtection"))
+const ComponentDataSource = dynamic(() => import("@/components/Tarion/ComponentDataSource"))
+const ComponentDataManifest = dynamic(() => import("@/components/Tarion/ComponentDataManifest"))
+const ComponentAnalyzingGateway = dynamic(() => import("@/components/Tarion/ComponentAnalyzingGateway"))
+const ComponentGlobalTrafficAnalysis = dynamic(() => import("@/components/Tarion/ComponentGlobalTrafficAnalysis"))
+const ComponentNetworkStats = dynamic(() => import("@/components/Tarion/ComponentNetworkStats"))
+const ComponentAnalyzingServer = dynamic(() => import("@/components/Tarion/ComponentAnalyzingServer"))
+const ComponentEndpointProtection = dynamic(() => import("@/components/Tarion/ComponentEndpointProtection"))
 /*import ComponentDataSource from "@/Components/Tarion/ComponentDataSource";
 import ComponentDataManifest from "@/Components/Tarion/ComponentDataManifest";
 import ComponentAnalyzingGateway from "@/Components/Tarion/ComponentAnalyzingGateway";
@@ -15,7 +15,7 @@ import ComponentGlobalTrafficAnalysis from "@/Components/Tarion/ComponentGlobalT
 import ComponentNetworkStats from "@/Components/Tarion/ComponentNetworkStats";
 import ComponentAnalyzingServer from "@/Components/Tarion/ComponentAnalyzingServer";
 import ComponentEndpointProtection from "@/Components/Tarion/ComponentEndpointProtection";*/
-import ComponentAdvisoryWatchDog from "@/Components/Tarion/ComponentAdvisoryWatchDog";
+import ComponentAdvisoryWatchDog from "@/components/Tarion/ComponentAdvisoryWatchDog";
 
 const ComponentReport = ()=>{
 
