@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 
 const ComponentReport =dynamic(()=>import("@/components/ComponentReport"),{
-  ssr: true,
+  ssr: false,
 }) ;
 
 const ReportPage = () =>{
