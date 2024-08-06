@@ -10,9 +10,9 @@ const ComponentNetworkStats = () =>{
   //get user context data
   const userDataContext = useContext(userContext)
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
-  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
 
   const [customerFirewallList, setCustomerFirewallList] = useState([])
   const [topNetworkProtocol, setTopNetworkProtocol] = useState([]);

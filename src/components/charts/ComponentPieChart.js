@@ -23,11 +23,12 @@ const backgroundColorList =  [
 ]
 
 export default function ComponentPieChart(props){
+
   const data =  {
     labels: props.labels? props.labels :'',
     datasets:[{
       label:props.valuelabel ? props.valuelabel : '',
-      data:props.logdata ? props.logdata : [10,10,10,10],
+      data:props.logdata ? props.logdata : '',
       backgroundColor: props.backGroundColors ? props.backGroundColors : backgroundColorList,
       hoverOffset: 4
     }]

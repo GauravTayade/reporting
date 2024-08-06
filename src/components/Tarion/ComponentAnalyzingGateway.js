@@ -16,10 +16,12 @@ import {
 const ComponentAnalyzingGateway = (props) => {
 
   //get user context data
+  //get user context data
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
-  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
 
   //useState variables to store state data
   const [result, setResult] = useState({})
@@ -29,17 +31,24 @@ const ComponentAnalyzingGateway = (props) => {
   const [pieExternalThreatsCount, setPieExternalThreatsCount] = useState()
   const [ipsHitsAnalysis, setIPsHitsAnalysis] = useState([])
 
+  const [analyzingGatewayData, setAnalyzingGatewayData] = useState({
+    total_firewall_subscription_count:0,
+    total_firewall_log_ingestion_count:0,
+    total_firewall_log_ingestion_count_diff_percentage:0,
+    total_firewall_log_allowed_count:0,
+    total_firewall_log_allowed_count_dff_percentage:0,
+    total_firewall_log_denied_count:0,
+    total_firewall_log_denied_count_diff_percentage:0,
+    total_firewall_log_IPS_count:0,
+    total_firewall_log_IPS_count_diff_percentage:0,
+    total_firewall_log_admin_activities_count:0,
+    total_firewall_log_admin_activities_count_diff_percentage:0,
+    total_firewall_active_blade_count:0,
+    total_firewall_external_threat_data:0
+  })
+
   //initial values of variables
   let data = {
-    total_firewall_subscriptions_count: 0,   //firewall/getFirewallSubscriptionCount
-    total_firewall_log_ingestion_count: 0, //firewall/getFirewallTotalLogCount
-    total_firewall_allowed_traffic_count: 0, //firewall/getFirewallAllowedTrafficCount
-    total_firewall_denied_traffic_count: 0, //firewall/getFirewallDeniedTrafficCount
-    total_firewall_ips_traffic_count: 0, //firewall/getFirewallIPSTrafficCount
-    total_firewall_admin_activities_log_count: 0, //firewall/getFirewallAdminActivitiesLogCount
-    total_firewall_active_blade_count: 0, //firewall/getFirewallActiveBladeCount
-    total_firewall_threats_count: 0, //firewall/getTopExternalThreat
-    total_ips_hits_analysis: 0,
     total_top_active_threats: [],
     active_blades: [],
     active_blades_count: [],
@@ -53,11 +62,10 @@ const ComponentAnalyzingGateway = (props) => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallCount', {
       params: {
         customerId: customerId,
-        interval: 30
       }
     })
       .then(response => {
-        data.total_firewall_subscriptions_count = response.data[0].clientfirewallcount
+        setAnalyzingGatewayData( prevState => {return{...prevState,total_firewall_subscription_count:response.data[0].clientfirewallcount}})
       })
       .catch((error) => {
         console.log(error)
@@ -68,32 +76,32 @@ const ComponentAnalyzingGateway = (props) => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
       params: {
         customerId: customerId,
-        interval: 30,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_firewall_log_ingestion_count = response.data[0].logcount
-      })
-      .catch((error) => {
-        console.log(error)
-      })
+      .then(async response => {
+        setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count:response.data[0].logcount}})
 
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
-      params: {
-        customerId: customerId,
-        interval: 30,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }
-    })
-      .then(response => {
-        //get percentage diff and set it to result
-        data.total_firewall_log_ingestion_count_diff_percentage = getPercentageDifference(data.total_firewall_log_ingestion_count,response.data[0].logcount)
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
+          params: {
+            customerId: customerId,
+            startDate: prevDateRange.newStartDate,
+            endDate: prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse => {
+            //get percentage diff and set it to result
+            await getPercentageDifference(response.data[0].logcount,prevResponse.data[0].logcount).then(result=>{
+              setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count_diff_percentage: result}})
+            })
+          })
+          .catch((error) => {
+            console.log(error)
+          })
       })
       .catch((error) => {
         console.log(error)
@@ -118,33 +126,32 @@ const ComponentAnalyzingGateway = (props) => {
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
           params: {
             firewallId: firewallList,
-            interval: 30,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
         })
-          .then(response => {
-            data.total_firewall_allowed_traffic_count = response.data[0].allowedtraffic
-          })
-          .catch((error) => {
-            console.log(error)
-          })
+          .then(async response => {
+            setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_allowed_count: response.data[0].allowedtraffic}})
+            //calculate new date range based on current date range difference.
+            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
-        //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
-        //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
-          params: {
-            firewallId: firewallList,
-            interval: 30,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
-          }
-        })
-          .then(response => {
-            //get percentage diff and set it to result
-            data.total_firewall_allowed_traffic_count_diff_percentage = getPercentageDifference(data.total_firewall_allowed_traffic_count,response.data[0].allowedtraffic)
+            //get previous month log count
+            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
+              params: {
+                firewallId: firewallList,
+                startDate: prevDateRange.newStartDate,
+                endDate: prevDateRange.newEndDate
+              }
+            })
+              .then(async prevResponse => {
+                //get percentage diff and set it to result
+                await getPercentageDifference(response.data[0].allowedtraffic,prevResponse.data[0].allowedtraffic).then(result=>{
+                  setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_allowed_count_dff_percentage: result}})
+                })
+              })
+              .catch((error) => {
+                console.log(error)
+              })
           })
           .catch((error) => {
             console.log(error)
@@ -175,34 +182,33 @@ const ComponentAnalyzingGateway = (props) => {
             endDate: reportEndDate
           }
         })
-          .then(response => {
-            data.total_firewall_denied_traffic_count = response.data[0].deniedtraffic
+          .then(async response => {
+            setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_denied_count:response.data[0].deniedtraffic}})
+            //calculate new date range based on current date range difference.
+            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+
+            //get previous month log count
+            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
+              params: {
+                firewallId: firewallList,
+                interval: 30,
+                startDate: prevDateRange.newStartDate,
+                endDate: prevDateRange.newEndDate
+              }
+            })
+              .then(async prevResponse => {
+                //get percentage diff and set it to result
+                await getPercentageDifference(response.data[0].deniedtraffic,prevResponse.data[0].deniedtraffic).then(result=>{
+                  setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_denied_count_diff_percentage: result}})
+                })
+              })
+              .catch((error) => {
+                console.log(error)
+              })
           })
           .catch((error) => {
             console.log(error)
           })
-
-        //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
-        //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
-          params: {
-            firewallId: firewallList,
-            interval: 30,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
-          }
-        })
-          .then(response => {
-            console.log(response.data)
-            //get percentage diff and set it to result
-            data.total_firewall_denied_traffic_count_diff_percentage = getPercentageDifference(data.total_firewall_denied_traffic_count,response.data[0].deniedtraffic)
-          })
-          .catch((error) => {
-            console.log(error)
-          })
-
       })
   }
 
@@ -224,33 +230,34 @@ const ComponentAnalyzingGateway = (props) => {
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
           params: {
             firewallId: firewallList,
-            interval: 30,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
         })
-          .then(response => {
-            data.total_firewall_ips_traffic_count = response.data[0].ipstrafficcount
-          })
-          .catch((error) => {
-            console.log(error)
-          })
+          .then(async response => {
 
-        //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+            setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_IPS_count:response.data[0].ipstrafficcount}})
 
-        //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
-          params: {
-            firewallId: firewallList,
-            interval: 30,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
-          }
-        })
-          .then(response => {
-            //get percentage diff and set it to result
-            data.total_firewall_ips_traffic_count_diff_percentage = getPercentageDifference(data.total_firewall_ips_traffic_count,response.data[0].ipstrafficcount)
+            //calculate new date range based on current date range difference.
+            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+
+            //get previous month log count
+            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
+              params: {
+                firewallId: firewallList,
+                startDate: prevDateRange.newStartDate,
+                endDate: prevDateRange.newEndDate
+              }
+            })
+              .then(async prevResponse => {
+                //get percentage diff and set it to result
+                await getPercentageDifference(response.data[0].ipstrafficcount,prevResponse.data[0].ipstrafficcount).then(result=>{
+                  setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_IPS_count_diff_percentage: result}})
+                })
+              })
+              .catch((error) => {
+                console.log(error)
+              })
           })
           .catch((error) => {
             console.log(error)
@@ -263,7 +270,6 @@ const ComponentAnalyzingGateway = (props) => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId,
-        interval: 30
       }
     })
       .then(async (response) => {
@@ -277,32 +283,33 @@ const ComponentAnalyzingGateway = (props) => {
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
           params: {
             firewallId: firewallList,
-            interval: 30,
             startDate : reportStartDate,
             endDate : reportEndDate
           }
         })
-          .then(response => {
-            data.total_firewall_admin_activities_log_count = response.data[0].adminactivitylogcount
-          })
-          .catch((error) => {
-            console.log(error)
-          })
+          .then(async response => {
 
-        //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+            setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_admin_activities_count: response.data[0].adminactivitylogcount}})
 
-        //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
-          params: {
-            firewallId: firewallList,
-            interval: 30,
-            startDate : prevDateRange.newStartDate,
-            endDate : prevDateRange.newEndDate
-          }
-        })
-          .then(response => {
-            data.total_firewall_admin_activities_log_count_diff_percentage = getPercentageDifference(data.total_firewall_admin_activities_log_count,response.data[0].adminactivitylogcount)
+            //calculate new date range based on current date range difference.
+            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+
+            //get previous month log count
+            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
+              params: {
+                firewallId: firewallList,
+                startDate : prevDateRange.newStartDate,
+                endDate : prevDateRange.newEndDate
+              }
+            })
+              .then(prevResponse => {
+                getPercentageDifference(response.data[0].adminactivitylogcount,prevResponse.data[0].adminactivitylogcount).then(result=>{
+                  setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_admin_activities_count_diff_percentage: result}})
+                })
+              })
+              .catch((error) => {
+                console.log(error)
+              })
           })
           .catch((error) => {
             console.log(error)
@@ -314,7 +321,6 @@ const ComponentAnalyzingGateway = (props) => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId,
-        interval: 30
       }
     })
       .then(async (response) => {
@@ -328,7 +334,6 @@ const ComponentAnalyzingGateway = (props) => {
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallActiveBladeCount", {
           params: {
             firewallId: firewallList,
-            interval: 30,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
@@ -345,7 +350,7 @@ const ComponentAnalyzingGateway = (props) => {
             })
             setPieActiveBlades(data.active_blades)
             setPieActiveBladesCount(data.active_blades_count)
-            data.total_firewall_active_blade_count = response.data
+            setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_active_blade_count: response.data}})
           })
           .catch((error) => {
             console.log(error)
@@ -354,7 +359,7 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const getTopExternalThreat = async () => {
-    await axios.post("http://10.3.22.37:4434/api/v1/threats/external/", {
+    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/threats/external/", {
       "index": ".siem-signals*",
       "gte":reportStartDate+"T00:01:00",
       "lt":reportEndDate+"T00:00:00"
@@ -372,7 +377,7 @@ const ComponentAnalyzingGateway = (props) => {
 
       setPieExternalThreats(data.top_external_threats)
       setPieExternalThreatsCount(data.top_external_threats_count)
-      data.top_external_threats_data = result
+      setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_external_threat_data:result}})
 
     }).catch(error => {
       console.log(error)
@@ -380,23 +385,22 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const getIPSHitsAnalysis = async () => {
-    await axios.post("http://10.3.22.37:4434/api/v1/firewall/attack/list", {
+    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/attack/list", {
       "index": "firewall-checkpoint-tarion*",
       "gte":reportStartDate+"T00:01:00",
       "lt":reportEndDate+"T00:00:00"
     })
       .then(response => {
-        data.top_ips_hits_analysis = []
+        let top_ips_hits_analysis = []
         const attackTypes = response.data.data.data.buckets.splice(0, 5)
         attackTypes.map(attack => {
-          data.top_ips_hits_analysis.push({
+          top_ips_hits_analysis.push({
             source: attack.key[0],
             destination: attack.key[1],
             attackType: attack.key[2]
           })
         })
-
-        setIPsHitsAnalysis(data.top_ips_hits_analysis)
+        setIPsHitsAnalysis(top_ips_hits_analysis)
       })
       .catch(error => {
         console.log(error)
@@ -429,9 +433,14 @@ const ComponentAnalyzingGateway = (props) => {
           </div>
           <div className="h-full w-10/12">
             <div className="w-full h-full flex items-center justify-center">
-              <h1
-                className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 border-b-2 uppercase">Analyzing
-                Gateway</h1>
+              <div className="w-full h-2/3 flex-col">
+                <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
+                  Analyzing Gateways
+                </h1>
+                <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
+                  {reportStartDate} - {reportEndDate}
+                </h2>
+              </div>
             </div>
           </div>
         </div>
@@ -440,7 +449,7 @@ const ComponentAnalyzingGateway = (props) => {
             <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
-                  <h1 className="text-4xl text-yellow-500 font-bold">{result.total_firewall_subscriptions_count}</h1>
+                <h1 className="text-4xl text-yellow-500 font-bold">{analyzingGatewayData.total_firewall_subscription_count ? analyzingGatewayData.total_firewall_subscription_count : 0}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -452,11 +461,11 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex-col items-center justify-center">
                       <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_firewall_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-sm text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count / 30)} logs/d</h1>
                       </div>
                       <div className="h-1/2 w-full flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_firewall_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-sm text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count / 43200)} logs/m</h1>
                       </div>
                     </div>
                   </div>
@@ -475,7 +484,7 @@ const ComponentAnalyzingGateway = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{formatNumber(result.total_firewall_log_ingestion_count)}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -486,8 +495,8 @@ const ComponentAnalyzingGateway = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_firewall_log_ingestion_count_diff_percentage ?
-                        result.total_firewall_log_ingestion_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage ?
+                        analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -495,7 +504,7 @@ const ComponentAnalyzingGateway = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_firewall_log_ingestion_count_diff_percentage ? result.total_firewall_log_ingestion_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage ? analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -507,7 +516,7 @@ const ComponentAnalyzingGateway = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{formatNumber(result.total_firewall_allowed_traffic_count)}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(analyzingGatewayData.total_firewall_log_allowed_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -517,8 +526,8 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_firewall_allowed_traffic_count_diff_percentage ?
-                        result.total_firewall_allowed_traffic_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage ?
+                        analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -526,7 +535,7 @@ const ComponentAnalyzingGateway = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_firewall_allowed_traffic_count_diff_percentage ? result.total_firewall_allowed_traffic_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage ? analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -538,7 +547,7 @@ const ComponentAnalyzingGateway = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{formatNumber(result.total_firewall_denied_traffic_count)}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(analyzingGatewayData.total_firewall_log_denied_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -548,8 +557,8 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_firewall_denied_traffic_count_diff_percentage ?
-                        result.total_firewall_denied_traffic_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_denied_count_diff_percentage ?
+                        analyzingGatewayData.total_firewall_log_denied_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -557,7 +566,7 @@ const ComponentAnalyzingGateway = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_firewall_denied_traffic_count_diff_percentage ? result.total_firewall_denied_traffic_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingGatewayData.total_firewall_log_denied_count_diff_percentage ? analyzingGatewayData.total_firewall_log_denied_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -569,7 +578,7 @@ const ComponentAnalyzingGateway = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{formatNumber(result.total_firewall_ips_traffic_count)}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(analyzingGatewayData.total_firewall_log_IPS_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -579,8 +588,8 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_firewall_ips_traffic_count_diff_percentage ?
-                        result.total_firewall_ips_traffic_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage ?
+                        analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -588,7 +597,7 @@ const ComponentAnalyzingGateway = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_firewall_ips_traffic_count_diff_percentage ? result.total_firewall_ips_traffic_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage ? analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -600,7 +609,7 @@ const ComponentAnalyzingGateway = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{formatNumber(result.total_firewall_admin_activities_log_count)}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(analyzingGatewayData.total_firewall_log_admin_activities_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -610,8 +619,8 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_firewall_admin_activities_log_count_diff_percentage ?
-                        result.total_firewall_admin_activities_log_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage ?
+                        analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -619,7 +628,7 @@ const ComponentAnalyzingGateway = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_firewall_admin_activities_log_count_diff_percentage ? result.total_firewall_admin_activities_log_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage ? analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -640,8 +649,8 @@ const ComponentAnalyzingGateway = (props) => {
                   </div>
                   <div className="h-5/6 w-full flex items-center justify-center">
                     <div className="w-2/6 h-full">
-                      {result.total_firewall_active_blade_count ?
-                        result.total_firewall_active_blade_count.map((blade,index)=>{
+                      {analyzingGatewayData.total_firewall_active_blade_count ?
+                        analyzingGatewayData.total_firewall_active_blade_count.map((blade,index)=>{
                           return (
                             <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
                               <div className="w-2/3 h-full flex items-center justify-center text-sm text-white">{blade.active_blade}</div>
@@ -667,8 +676,8 @@ const ComponentAnalyzingGateway = (props) => {
                   </div>
                   <div className="h-5/6 w-full flex items-center justify-center">
                     <div className="w-2/6 h-full">
-                      {result.top_external_threats_data?
-                        result.top_external_threats_data.map((threat,index)=> {
+                      {analyzingGatewayData.total_firewall_external_threat_data ?
+                        analyzingGatewayData.total_firewall_external_threat_data.map((threat,index)=> {
                           return (
                             <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
                               <div

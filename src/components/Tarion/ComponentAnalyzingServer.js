@@ -13,6 +13,28 @@ import {
 const ComponentAnalyzingServer = (props) => {
 
   const [result, setResult] = useState({})
+  const [analyzingServer, setAnalyzingServer] = useState({
+    total_server_subscription_count:0,
+    total_server_log_ingestion_count: 0,
+    total_server_authentication_count:0,
+    total_server_authentication_count_diff_percentage:0,
+    total_server_failed_authentication_count:0,
+    total_server_failed_authentication_count_diff_percentage:0,
+    total_server_registry_changes_count:0,
+    total_server_registry_changes_count_diff_percentage:0,
+    total_server_service_creation_count:0,
+    total_server_service_creation_count_diff_percentage:0,
+    total_server_process_creation_count:0,
+    total_server_process_creation_count_diff_percentage:0,
+    total_server_policy_changes_count:0,
+    total_server_policy_changes_count_diff_percentage:0,
+    total_server_file_creation_count:0,
+    total_server_file_creation_count_diff_percentage:0,
+    total_server_unique_hosts_count:0,
+    total_server_unique_hosts_count_diff_percentage:0,
+    total_server_unique_username_count:0,
+    total_server_unique_username_count_diff_percentage:0
+  })
   const [pieMostActiveServers, setPieMostActiveServers] = useState()
   const [pieMostActiveServersRecordCount, setPieMostActiveServersRecordCount] = useState()
   const [totalUniqueHosts, setTotalUniqueHosts] = useState()
@@ -24,10 +46,12 @@ const ComponentAnalyzingServer = (props) => {
   const [pieTopTargetHosts, setPieTopTargetHosts] = useState()
   const [pieTopTargetHostsRecordCount, setPieTopTargetHostsRecordCount] = useState()
 
+  //get user context data
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
-  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
 
   let data = {
     total_subscriptions_count: 0,   //find-endpoint-count-total
@@ -44,19 +68,6 @@ const ComponentAnalyzingServer = (props) => {
     top_target_hosts: 0, //find-top-failed-authentication-target-hosts
   }
 
-  //get total log ingested by servers
-  const getServerTotalLogIngestionCount = async () =>{
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalLogCount",{
-      params:{customerId: customerId,startDate:reportStartDate,endDate:reportEndDate}
-    })
-      .then(response=>{
-        data.total_endpoints_log_ingestion_count = response.data[0].logcount
-      })
-      .catch(error=>{
-        console.log(error)
-      })
-  }
-
   const getUniqueServerCount = async () => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
       params: {
@@ -66,9 +77,22 @@ const ComponentAnalyzingServer = (props) => {
       }
     })
       .then(response => {
-        data.total_subscriptions_count = response.data[0].hostcount
+        setAnalyzingServer(prevState => {return{...prevState,total_server_subscription_count:response.data[0].hostcount}})
       })
       .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  //get total log ingested by servers
+  const getServerTotalLogIngestionCount = async () =>{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalLogCount",{
+      params:{customerId: customerId,startDate:reportStartDate,endDate:reportEndDate}
+    })
+      .then(response=>{
+        setAnalyzingServer(prevState => {return{...prevState,total_server_log_ingestion_count: response.data[0].logcount}})
+      })
+      .catch(error=>{
         console.log(error)
       })
   }
@@ -82,27 +106,30 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_endpoint_authentication_count = response.data[0].totalauthenticationcount
+      .then(async response => {
+        setAnalyzingServer(prevState => {return{...prevState,total_server_authentication_count: response.data[0].totalauthenticationcount}})
+
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointAuthenticationCount",{
+          params:{
+            customerId: customerId,
+            startDate:prevDateRange.newStartDate,
+            endDate:prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse=>{
+            await getPercentageDifference(response.data[0].totalauthenticationcount,prevResponse.data[0].totalauthenticationcount).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_authentication_count_diff_percentage: result}})
+            })
+          })
+          .catch(error=>{
+            console.log(error)
+          })
+
       })
       .catch(error => {
-        console.log(error)
-      })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointAuthenticationCount",{
-      params:{
-        customerId: customerId,
-        startDate:prevDateRange.newStartDate,
-        endDate:prevDateRange.newEndDate
-      }
-    })
-      .then(response=>{
-        data.total_endpoint_authentication_log_ingestion_count_diff_percentage = getPercentageDifference(data.total_endpoint_authentication_count,response.data[0].totalauthenticationcount)
-      })
-      .catch(error=>{
         console.log(error)
       })
 
@@ -116,27 +143,29 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_failed_authentication_count = response.data[0].totalfailedauthentication
+      .then(async response => {
+        setAnalyzingServer(prevState => {return{...prevState,total_server_failed_authentication_count: response.data[0].totalfailedauthentication}})
+
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalFailedAuthenticationCount",{
+          params:{
+            customerId: customerId,
+            startDate:prevDateRange.newStartDate,
+            endDate:prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse=>{
+            await getPercentageDifference(response.data[0].totalfailedauthentication,prevResponse.data[0].totalfailedauthentication).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_failed_authentication_count_diff_percentage: result}})
+            })
+          })
+          .catch(error=>{
+            console.log(error)
+          })
       })
       .catch(error => {
-        console.log(error)
-      })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalFailedAuthenticationCount",{
-      params:{
-        customerId: customerId,
-        startDate:prevDateRange.newStartDate,
-        endDate:prevDateRange.newEndDate
-      }
-    })
-      .then(response=>{
-        data.total_failed_authentication_count_diff_percentage = getPercentageDifference(data.total_failed_authentication_count,response.data[0].totalfailedauthentication)
-      })
-      .catch(error=>{
         console.log(error)
       })
   }
@@ -149,29 +178,31 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_registry_changes_count = response.data[0].totalregistrychangecount
+      .then(async response => {
+        setAnalyzingServer((prevState=>{return{...prevState,total_server_registry_changes_count:response.data[0].totalregistrychangecount}}))
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointRegistryChangesCount",{
+          params:{
+            customerId: customerId,
+            startDate:prevDateRange.newStartDate,
+            endDate:prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse=>{
+            await getPercentageDifference(response.data[0].totalregistrychangecount,prevResponse.data[0].totalregistrychangecount).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_registry_changes_count_diff_percentage: result}})
+            })
+          })
+          .catch(error=>{
+            console.log(error)
+          })
       })
       .catch(error => {
         console.log(error)
       })
 
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointRegistryChangesCount",{
-      params:{
-        customerId: customerId,
-        startDate:prevDateRange.newStartDate,
-        endDate:prevDateRange.newEndDate
-      }
-    })
-      .then(response=>{
-        data.total_registry_changes_count_diff_percentage = getPercentageDifference(data.total_registry_changes_count,response.data[0].totalregistrychangecount)
-      })
-      .catch(error=>{
-        console.log(error)
-      })
   }
 
   const getTotalServiceCreationCount = async () => {
@@ -182,30 +213,32 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_service_creations_count = response.data[0].totalservicecreationcount
+      .then(async response => {
+       setAnalyzingServer(prevState => {return{...prevState,total_server_service_creation_count: response.data[0].totalservicecreationcount}})
+
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
+          params: {
+            customerId: customerId,
+            startDate: prevDateRange.newStartDate,
+            endDate: prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse => {
+            await getPercentageDifference(response.data[0].totalservicecreationcount,prevResponse.data[0].totalservicecreationcount).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_service_creation_count_diff_percentage: result}})
+            })
+          })
+          .catch(error => {
+            console.log(error)
+          })
+
       })
       .catch(error => {
         console.log(error)
       })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
-      params: {
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }
-    })
-      .then(response => {
-        data.total_service_creations_count_diff_percentage = getPercentageDifference(data.total_service_creations_count,response.data[0].totalservicecreationcount)
-      })
-      .catch(error => {
-        console.log(error)
-      })
-
   }
 
   const getTotalProcessCreationCount = async () => {
@@ -216,29 +249,33 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_process_creations_count = response.data[0].totalprocesscreationcount
+      .then(async response => {
+        setAnalyzingServer(prevState => {return{...prevState,total_server_process_creation_count:response.data[0].totalprocesscreationcount}})
+
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointProcessCreationCount', {
+          params: {
+            customerId: customerId,
+            startDate: prevDateRange.newStartDate,
+            endDate: prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse => {
+            await getPercentageDifference(response.data[0].totalprocesscreationcount,prevResponse.data[0].totalprocesscreationcount).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_process_creation_count_diff_percentage: result}})
+            })
+          })
+          .catch(error => {
+            console.log(error)
+          })
+
       })
       .catch(error => {
         console.log(error)
       })
 
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointProcessCreationCount', {
-      params: {
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }
-    })
-      .then(response => {
-        data.total_process_creations_count_diff_percentage = getPercentageDifference(data.total_process_creations_count,response.data[0].totalprocesscreationcount)
-      })
-      .catch(error => {
-        console.log(error)
-      })
   }
 
   const getTotalPolicyChangesCount = async () => {
@@ -249,25 +286,28 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_policy_changes_count = response.data[0].totalpolicychangescount
-      })
-      .catch(error => {
-        console.log(error)
-      })
+      .then(async response => {
+        setAnalyzingServer(prevState => {return{...prevState,total_server_policy_changes_count: response.data[0].totalpolicychangescount}})
 
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
-      params: {
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }
-    })
-      .then(response => {
-        data.total_policy_changes_count_diff_percentage = getPercentageDifference(data.total_policy_changes_count,response.data[0].totalpolicychangescount)
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
+          params: {
+            customerId: customerId,
+            startDate: prevDateRange.newStartDate,
+            endDate: prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse => {
+            await getPercentageDifference(response.data[0].totalpolicychangescount,prevResponse.data[0].totalpolicychangescount).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_policy_changes_count_diff_percentage: result}})
+            })
+          })
+          .catch(error => {
+            console.log(error)
+          })
+
       })
       .catch(error => {
         console.log(error)
@@ -282,25 +322,28 @@ const ComponentAnalyzingServer = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_file_creation_count = response.data[0].totalfilecreationcount
-      })
-      .catch(error => {
-        console.log(error)
-      })
+      .then(async response => {
+        setAnalyzingServer(prevState => {return{...prevState,total_server_file_creation_count:response.data[0].totalfilecreationcount}})
 
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
-      params: {
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }
-    })
-      .then(response => {
-        data.total_file_creation_count_diff_percentage = getPercentageDifference(data.total_file_creation_count,response.data[0].totalfilecreationcount)
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
+          params: {
+            customerId: customerId,
+            startDate: prevDateRange.newStartDate,
+            endDate: prevDateRange.newEndDate
+          }
+        })
+          .then(async prevResponse => {
+            getPercentageDifference(response.data[0].totalfilecreationcount,prevResponse.data[0].totalfilecreationcount).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_file_creation_count_diff_percentage: result}})
+            })
+          })
+          .catch(error => {
+            console.log(error)
+          })
+
       })
       .catch(error => {
         console.log(error)
@@ -362,28 +405,30 @@ const ComponentAnalyzingServer = (props) => {
       "gte": reportStartDate+"T00:01:00",
       "lt": reportEndDate+"T00:00:00"
     })
-      .then(response => {
-        setTotalUniqueHosts(response.data.data.count)
+      .then(async response => {
+        setAnalyzingServer(prevState => {return{...prevState,total_server_unique_hosts_count: response.data.data.count}})
+
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host",{
+          "index": "logs-*-tarion*",
+          "gte": prevDateRange.newStartDate+"T00:01:00",
+          "lt": prevDateRange.newEndDate+"T00:00:00"
+        })
+          .then(async prevResponse=>{
+            await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_unique_hosts_count_diff_percentage: result}})
+            })
+          })
+          .catch(error=>{
+            console.log(error)
+          })
       })
       .catch(error => {
         console.log(error)
       })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host",{
-      "index": "logs-*-tarion*",
-      "gte": prevDateRange.newStartDate+"T00:01:00",
-      "lt": prevDateRange.newEndDate+"T00:00:00"
-    })
-      .then(response=>{
-        let diff = getPercentageDifference(totalUniqueHosts,response.data.data.count)
-        setTotalUniqueHostsDiffPercentage(diff)
-      })
-      .catch(error=>{
-        console.log(error)
-      })
+    console.log('rere',analyzingServer)
   }
 
   const getUniqueTotalTargetUsernames = async () => {
@@ -393,24 +438,23 @@ const ComponentAnalyzingServer = (props) => {
       "lt": reportEndDate+"T00:00:00"
     })
       .then(async response => {
-        setTotalUniqueUsernames(response.data.data.count)
-      })
-      .catch(error => {
-        console.log(error)
-      })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-    //get previous month log count
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
-      "index": "logs-*-tarion*",
-      "gte": prevDateRange.newStartDate+"T00:01:00",
-      "lt": prevDateRange.newEndDate+"T00:00:00"
-    })
-      .then(async response => {
-        let diff = getPercentageDifference(totalUniqueUsernames,response.data.data.count)
-        console.log('diff',diff)
-        setTotalUniqueUsernamesDiffPercentage(diff)
+        setAnalyzingServer(prevState => {return{...prevState,total_server_unique_username_count: response.data.data.count}})
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //get previous month log count
+        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
+          "index": "logs-*-tarion*",
+          "gte": prevDateRange.newStartDate+"T00:01:00",
+          "lt": prevDateRange.newEndDate+"T00:00:00"
+        })
+          .then(async prevResponse => {
+            await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
+              setAnalyzingServer(prevState => {return{...prevState,total_server_unique_username_count_diff_percentage:result}})
+            })
+          })
+          .catch(error => {
+            console.log(error)
+          })
       })
       .catch(error => {
         console.log(error)
@@ -420,8 +464,8 @@ const ComponentAnalyzingServer = (props) => {
 
   useEffect(() => {
     Promise.all([
-      getServerTotalLogIngestionCount(),
       getUniqueServerCount(),
+      getServerTotalLogIngestionCount(),
       getTotalAuthenticationCount(),
       getFailedAuthenticationCount(),
       getTotalRegistryChangesCount(),
@@ -429,13 +473,14 @@ const ComponentAnalyzingServer = (props) => {
       getTotalProcessCreationCount(),
       getTotalPolicyChangesCount(),
       getTotalFileCreationCount(),
-      getUniqueTotalTargetUsernames(),
-      getUniqueTotalTargetHosts(),
       getMostActiveServers(),
-      getTopTargetHosts()
+      getTopTargetHosts(),
+      getUniqueTotalTargetHosts(),
+      getUniqueTotalTargetUsernames(),
+
     ]).then(() => {
-      console.log(data)
-      setResult(data)
+      // console.log(data)
+      // setResult(data)
     })
   }, [])
 
@@ -449,9 +494,14 @@ const ComponentAnalyzingServer = (props) => {
           </div>
           <div className="h-full w-10/12">
             <div className="w-full h-full flex items-center justify-center">
-              <h1
-                className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 border-b-2 uppercase">Analyzing
-                Server</h1>
+              <div className="w-full h-2/3 flex-col">
+                <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
+                  Analyzing Servers
+                </h1>
+                <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
+                  {reportStartDate} - {reportEndDate}
+                </h2>
+              </div>
             </div>
           </div>
         </div>
@@ -461,7 +511,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {formatNumber(result.total_subscriptions_count)}
+                    {formatNumber(analyzingServer.total_server_subscription_count)}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -474,11 +524,11 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex-col items-center justify-center">
                       <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_endpoints_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-sm text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count / 30)} logs/d</h1>
                       </div>
                       <div className="h-1/2 w-full flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_endpoints_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-sm text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count / 43200)} logs/m</h1>
                       </div>
                     </div>
                   </div>
@@ -497,7 +547,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {formatNumber(result.total_endpoint_authentication_count)}
+                    {formatNumber(analyzingServer.total_server_authentication_count)}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -508,8 +558,8 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_endpoint_authentication_log_ingestion_count_diff_percentage ?
-                        result.total_endpoint_authentication_log_ingestion_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_authentication_count_diff_percentage ?
+                        analyzingServer.total_server_authentication_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -517,7 +567,7 @@ const ComponentAnalyzingServer = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_endpoint_authentication_log_ingestion_count_diff_percentage ? result.total_endpoint_authentication_log_ingestion_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingServer.total_server_authentication_count_diff_percentage ? analyzingServer.total_server_authentication_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -529,7 +579,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {formatNumber(result.total_registry_changes_count)}
+                    {formatNumber(analyzingServer.total_server_registry_changes_count)}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -540,8 +590,8 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_registry_changes_count_diff_percentage ?
-                        result.total_registry_changes_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_registry_changes_count_diff_percentage ?
+                        analyzingServer.total_server_registry_changes_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -549,7 +599,7 @@ const ComponentAnalyzingServer = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_registry_changes_count_diff_percentage ? result.total_registry_changes_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingServer.total_server_registry_changes_count_diff_percentage ? analyzingServer.total_server_registry_changes_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -561,7 +611,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {formatNumber(result.total_service_creations_count)}
+                    {formatNumber(analyzingServer.total_server_service_creation_count)}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -572,8 +622,8 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_service_creations_count_diff_percentage ?
-                        result.total_service_creations_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_service_creation_count_diff_percentage ?
+                        analyzingServer.total_server_service_creation_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -581,7 +631,7 @@ const ComponentAnalyzingServer = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_service_creations_count_diff_percentage ? result.total_service_creations_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingServer.total_server_service_creation_count_diff_percentage ? analyzingServer.total_server_service_creation_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -593,7 +643,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-3xl text-yellow-500 font-bold">{formatNumber(result.total_process_creations_count)}</h1>
+                    className="text-3xl text-yellow-500 font-bold">{formatNumber(analyzingServer.total_server_process_creation_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-white">
@@ -603,8 +653,8 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_process_creations_count_diff_percentage ?
-                        result.total_process_creations_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_process_creation_count_diff_percentage ?
+                        analyzingServer.total_server_process_creation_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -612,7 +662,7 @@ const ComponentAnalyzingServer = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_process_creations_count_diff_percentage ? result.total_process_creations_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingServer.total_server_process_creation_count_diff_percentage ? analyzingServer.total_server_process_creation_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -624,7 +674,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {formatNumber(result.total_policy_changes_count)}
+                    {formatNumber(analyzingServer.total_server_policy_changes_count)}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -635,8 +685,8 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_policy_changes_count_diff_percentage ?
-                        result.total_policy_changes_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_policy_changes_count_diff_percentage ?
+                        analyzingServer.total_server_policy_changes_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -644,7 +694,7 @@ const ComponentAnalyzingServer = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_policy_changes_count_diff_percentage ? result.total_policy_changes_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingServer.total_server_policy_changes_count_diff_percentage ? analyzingServer.total_server_policy_changes_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -656,7 +706,7 @@ const ComponentAnalyzingServer = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{formatNumber(result.total_file_creation_count)}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(analyzingServer.total_server_file_creation_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-white">
@@ -666,8 +716,8 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {result.total_file_creation_count_diff_percentage ?
-                        result.total_file_creation_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_file_creation_count_diff_percentage ?
+                        analyzingServer.total_server_file_creation_count_diff_percentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -675,7 +725,7 @@ const ComponentAnalyzingServer = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{result.total_file_creation_count_diff_percentage ? result.total_file_creation_count_diff_percentage : 0} %</h1>
+                        className="text-lg text-white">{analyzingServer.total_server_file_creation_count_diff_percentage ? analyzingServer.total_server_file_creation_count_diff_percentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -749,12 +799,12 @@ const ComponentAnalyzingServer = (props) => {
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {formatNumber(result.total_endpoint_authentication_count)}
+                        {formatNumber(analyzingServer.total_server_authentication_count)}
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {result.total_endpoint_authentication_log_ingestion_count_diff_percentage ?
-                          result.total_endpoint_authentication_log_ingestion_count_diff_percentage >= 0 ?
+                        {analyzingServer.total_server_authentication_count_diff_percentage ?
+                          analyzingServer.total_server_authentication_count_diff_percentage >= 0 ?
                             <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
@@ -762,7 +812,7 @@ const ComponentAnalyzingServer = (props) => {
                           ''
                         }
                         <h1
-                          className="text-white">{result.total_endpoint_authentication_log_ingestion_count_diff_percentage ? result.total_endpoint_authentication_log_ingestion_count_diff_percentage : 0} %</h1>
+                          className="text-white">{analyzingServer.total_server_authentication_count_diff_percentage ? analyzingServer.total_server_authentication_count_diff_percentage : 0} %</h1>
                       </div>
 
                       <div
@@ -772,20 +822,20 @@ const ComponentAnalyzingServer = (props) => {
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
                         {
-                          formatNumber(result.total_failed_authentication_count)
+                          formatNumber(analyzingServer.total_server_failed_authentication_count)
                         }
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {result.total_failed_authentication_count_diff_percentage ?
-                          result.total_failed_authentication_count_diff_percentage >=0 ?
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?
+                          analyzingServer.total_server_failed_authentication_count_diff_percentage >=0 ?
                             <FontAwesomeIcon className="text-2xl text-green-700" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-2xl text-red-700" icon={faCaretDown}/>
                           :
                           0
                         }
-                        {result.total_failed_authentication_count_diff_percentage ?  result.total_failed_authentication_count_diff_percentage: 0}
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?  analyzingServer.total_server_failed_authentication_count_diff_percentage: 0}
                       </div>
 
                       <div
@@ -794,11 +844,19 @@ const ComponentAnalyzingServer = (props) => {
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {formatNumber((result.total_failed_authentication_count * 100) / result.total_endpoint_authentication_count)}
+                        {formatNumber((analyzingServer.total_server_failed_authentication_count * 100) / analyzingServer.total_server_authentication_count)} %
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        <FontAwesomeIcon className="text-2xl text-red-700" icon={faCaretUp}/> 19.4%
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?
+                          analyzingServer.total_server_failed_authentication_count_diff_percentage >=0 ?
+                            <FontAwesomeIcon className="text-2xl text-green-700" icon={faCaretUp}/>
+                            :
+                            <FontAwesomeIcon className="text-2xl text-red-700" icon={faCaretDown}/>
+                          :
+                          0
+                        }
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?  analyzingServer.total_server_failed_authentication_count_diff_percentage: 0}
                       </div>
 
                       <div
@@ -806,12 +864,12 @@ const ComponentAnalyzingServer = (props) => {
                         # of Total Hosts
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">{totalUniqueHosts}
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">{analyzingServer.total_server_unique_hosts_count}
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {totalUniqueHostsDiffPercentage ?
-                          totalUniqueHostsDiffPercentage >= 0 ?
+                        {analyzingServer.total_server_unique_hosts_count_diff_percentage ?
+                          analyzingServer.total_server_unique_hosts_count_diff_percentage >= 0 ?
                             <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
@@ -819,7 +877,7 @@ const ComponentAnalyzingServer = (props) => {
                           ''
                         }
                         <h1
-                          className="text-white">{totalUniqueHostsDiffPercentage ? totalUniqueHostsDiffPercentage : 0} %</h1>
+                          className="text-white">{analyzingServer.total_server_unique_hosts_count_diff_percentage ? analyzingServer.total_server_unique_hosts_count_diff_percentage : 0} %</h1>
                       </div>
 
                       <div
@@ -827,12 +885,12 @@ const ComponentAnalyzingServer = (props) => {
                         # of Total Usernames
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">{totalUniqueUsernames}
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">{analyzingServer.total_server_unique_username_count}
                       </div>
                       <div
                         className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {totalUniqueUsernamesDiffPercentage ?
-                          totalUniqueUsernamesDiffPercentage >= 0 ?
+                        {analyzingServer.total_server_unique_username_count_diff_percentage ?
+                          analyzingServer.total_server_unique_username_count_diff_percentage >= 0 ?
                             <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
@@ -840,7 +898,7 @@ const ComponentAnalyzingServer = (props) => {
                           ''
                         }
                         <h1
-                          className="text-white">{totalUniqueUsernamesDiffPercentage ? totalUniqueUsernamesDiffPercentage : 0} %</h1>
+                          className="text-white">{analyzingServer.total_server_unique_username_count_diff_percentage ? analyzingServer.total_server_unique_username_count_diff_percentage : 0} %</h1>
                       </div>
                     </div>
                   </div>

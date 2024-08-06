@@ -8,7 +8,7 @@ import {
   faMagnifyingGlass,
   faShield
 } from "@fortawesome/free-solid-svg-icons";
-import {useContext, useState,useEffect} from "react";
+import {useContext, useState, useEffect} from "react";
 import userContext from "@/context/userContext";
 import axios from "axios";
 import {
@@ -17,244 +17,541 @@ import {
   chartBackgroundColorsListOpacity40,
   formatNumber,
   getPercentageDifference,
-  getNewDateRange
+  getNewDateRange,
+  getAverageLogsPerDay,
+  getAverageLogsPerMinuts,
+  getAverageLogsPerSeconds,
+  getPercentage,
+  formatNumberPercentage
 } from '@/Utilities/Utilities'
 import {useRouter} from "next/router";
 
 const ComponentDataSource = (props) => {
 
   const router = useRouter()
-  //to store all api call values once useEffect has completed
-  const [result,setResult] = useState({})
-  const [firewallData, setFirewallData] = useState(0)
-  const [endpointData, setEndpointData] = useState(0)
-  const [edrData, setEdrData] = useState(0)
-  const [nacData, setNacData] = useState(0)
-  const [vaData, setVaData] = useState(0)
 
-  const [totalDevices , setTotalDevices] = useState(0)
-  const [totalDevicesPrev, setTotalDevicesPrev] = useState(0)
-  const [totalDevicesDiffPercentage, setTotalDevicesDiffPercentage] = useState(0)
-  const [totalLogs, setTotalLogs] = useState(0)
-  const [totalLogsPrev,setTotalLogsPrev] = useState(0)
-  const [totalLogsDiffPercentage, setTotalLogsDiffPercentage] = useState(0)
+  const initialValues = {
+    total_customer_firewall_data: 0,
+    total_customer_endpoint_data: 0,
+    total_customer_edr_data: 0,
+    total_customer_nac_data: 0,
+    total_customer_va_data: 0,
+    total_customer_total_devices_count: 0,
+    total_customer_total_devices_count_prev: 0,
+    total_customer_total_devices_log_count: 0,
+    total_customer_total_devices_log_count_prev: 0,
+    total_customer_total_devices_count_diff_percentage: 0,
+    total_customer_total_devices_log_count_diff_percentage: 0
+  }
+  const dataManifestDatainitialValues = {
+    total_customer_firewall_subscriptions_count: 0,
+    total_customer_server_subscriptions_count: 0,
+    total_customer_edr_subscriptions_count: 0,
+    total_customer_nac_subscriptions_count: 0,
+    total_customer_firewall_log_ingestion_count: 0,
+    total_customer_server_log_ingestion_count: 0,
+    total_customer_edr_log_ingestion_count: 0,
+    total_customer_nac_log_ingestion_count: 0,
+    total_customer_firewall_log_ingestion_count_average_day: 0,
+    total_customer_server_log_ingestion_count_average_day: 0,
+    total_customer_edr_log_ingestion_count_average_day: 0,
+    total_customer_nac_log_ingestion_count_average_day: 0,
+    total_customer_firewall_log_ingestion_count_average_minute: 0,
+    total_customer_server_log_ingestion_count_average_minute: 0,
+    total_customer_edr_log_ingestion_count_average_minute: 0,
+    total_customer_nac_log_ingestion_count_average_minute: 0,
+    total_customer_firewall_log_ingestion_count_average_second: 0,
+    total_customer_server_log_ingestion_count_average_second: 0,
+    total_customer_edr_log_ingestion_count_average_second: 0,
+    total_customer_nac_log_ingestion_count_average_second: 0,
+    total_customer_firewall_log_ingestion_count_percentage:0,
+    total_customer_server_log_ingestion_count_percentage:0,
+    total_customer_edr_log_ingestion_count_percentage:0,
+    total_customer_nac_log_ingestion_count_percentage:0,
+  }
+  const logCountInitialValues = {logCount:0}
 
+  const [dataManifestData,setDataManifestData] = useState(initialValues)
+  const [totalLogCount,setTotalLogCount] = useState(logCountInitialValues)
+
+  const [datasourceData, setDatasourceData] = useState(initialValues)
+  const [totalDeviceDiffPercentage, setTotalDeviceDiffPercentage] = useState(0);
+  const [totalDeviceLogCountDiffPercentage, setTotalDeviceLogCountDiffPercentage] = useState(0);
+
+  //get user context data
   const userDataContext = useContext(userContext)
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
-  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
 
-  const data = {
-    totalLogs:0,
-    totalDevices:0
-  }
 
   //get client firewalls count and logs count
-  const getCustomerFirewalls = async() => {
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getFirewallDataSourceDetails",{params:{
+  const getCustomerFirewalls = async () => {
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallDataSourceDetails", {
+      params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
-      }})
-      .then(response=>{
-        if (response.data){
-          setFirewallData(response.data)
-          setTotalDevices(parseInt(response.data[0].firewallcount))
-          setTotalLogs(parseInt(response.data[0].totallogs))
+      }
+    })
+      .then(async response => {
+        if (response.data) {
+          setDatasourceData(prevState => {
+            return {...prevState, total_customer_firewall_data: response.data}
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data[0].firewallcount)
+            }
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].totallogs)
+            }
+          })
+
+          //calculate new date range based on current date range difference.
+          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+
+          //get previous month log count
+          await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallDataSourceDetails", {
+            params: {
+              customerId: customerId,
+              startDate: prevDateRange.newStartDate,
+              endDate: prevDateRange.newEndDate
+            }
+          })
+            .then(prevResponse => {
+              if (prevResponse.data) {
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_count_prev: parseInt(prevState.total_customer_total_devices_count_prev) + parseInt(prevResponse.data[0].firewallcount)
+                  }
+                })
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_log_count_prev: parseInt(prevState.total_customer_total_devices_log_count_prev) + parseInt(prevResponse.data[0].totallogs)
+                  }
+                })
+              }
+            })
+            .catch((error) => {
+              console.log(error)
+            })
         }
       })
-      .catch((error)=>{
-        console.log(error)
-      })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
-    //get previous month log count
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getFirewallDataSourceDetails",{params:{
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }})
-      .then(response=>{
-        if (response.data){
-          setTotalDevicesPrev(parseInt(response.data[0].firewallcount))
-          setTotalLogsPrev(parseInt(response.data[0].totallogs))
-        }
-      })
-      .catch((error)=>{
+      .catch((error) => {
         console.log(error)
       })
 
   }
+
   //get client servers count and logs count
-  const getCustomerEndpoints = async() =>{
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointDatSourceDetails",{params:{
+  const getCustomerEndpoints = async () => {
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getEndpointDatSourceDetails", {
+      params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
-      }})
-      .then(response=>{
-        if(response.data){
-          setEndpointData(response.data)
-          setTotalDevices(prevTotalDevices => { return prevTotalDevices+parseInt(response.data[0].endpointcount)})
-          setTotalLogs(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].totallogs)})
+      }
+    })
+      .then(response => {
+        if (response.data) {
+          setDatasourceData(prevState => {
+            return {...prevState, total_customer_endpoint_data: response.data}
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data[0].endpointcount)
+            }
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].totallogs)
+            }
+          })
+
+          //calculate new date range based on current date range difference.
+          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+
+          //get previous month log count
+          axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getEndpointDatSourceDetails", {
+            params: {
+              customerId: customerId,
+              startDate: prevDateRange.newStartDate,
+              endDate: prevDateRange.newEndDate
+            }
+          })
+            .then(prevResponse => {
+              if (prevResponse.data) {
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_count_prev: parseInt(prevState.total_customer_total_devices_count_prev) + parseInt(prevResponse.data[0].endpointcount)
+                  }
+                })
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_log_count_prev: parseInt(prevState.total_customer_total_devices_log_count_prev) + parseInt(prevResponse.data[0].totallogs)
+                  }
+                })
+              }
+            })
+            .catch((error) => {
+              console.log(error)
+            })
+
         }
       })
-      .catch((error)=>{
+      .catch((error) => {
         console.log(error)
       })
 
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+  }
 
-    //get previous month log count
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointDatSourceDetails",{params:{
+  //get client NAC count and logs count
+  const getCustomerNAC = async () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/nac/getNACDataSourceDetails", {
+      params: {
         customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }})
-      .then(response=>{
-        if (response.data){
-          setTotalDevicesPrev(prevTotalDevicesPrev =>{return prevTotalDevicesPrev + parseInt(response.data[0].endpointcount)})
-          setTotalLogsPrev(prevTotalLogsPrev=>{return prevTotalLogsPrev + parseInt(response.data[0].totallogs)})
+        startDate: reportStartDate,
+        endDate: reportEndDate
+      }
+    })
+      .then(response => {
+        if (response.data) {
+          setDatasourceData(prevState => {
+            return {...prevState, total_customer_nac_data: response.data}
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data[0].naccount)
+            }
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].totallogs)
+            }
+          })
+          //calculate new date range based on current date range difference.
+          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+
+          //get previous month log count
+          axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/nac/getNACDataSourceDetails", {
+            params: {
+              customerId: customerId,
+              startDate: prevDateRange.newStartDate,
+              endDate: prevDateRange.newEndDate
+            }
+          })
+            .then(prevResponse => {
+              if (prevResponse.data) {
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_count_prev: parseInt(prevState.total_customer_total_devices_count_prev) + parseInt(prevResponse.data[0].naccount)
+                  }
+                })
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_log_count_prev: parseInt(prevState.total_customer_total_devices_log_count_prev) + parseInt(prevResponse.data[0].totallogs)
+                  }
+                })
+              }
+            })
+            .catch((error) => {
+              console.log(error)
+            })
         }
       })
-      .catch((error)=>{
+      .catch((error) => {
+        console.log(error)
+      })
+
+  }
+
+  //get client edr count and logs count
+  const getCustomerEDR = async () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRDataSourceDetails", {
+      params: {
+        customerId: customerId,
+        startDate: reportStartDate,
+        endDate: reportEndDate
+      }
+    })
+      .then(response => {
+        if (response.data) {
+          setDatasourceData(prevState => {
+            return {...prevState, total_customer_edr_data: response.data}
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data[0].edrcount)
+            }
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].totallogs)
+            }
+          })
+
+          //calculate new date range based on current date range difference.
+          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+
+          //get previous month log count
+          axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRDataSourceDetails", {
+            params: {
+              customerId: customerId,
+              startDate: prevDateRange.newStartDate,
+              endDate: prevDateRange.newEndDate
+            }
+          })
+            .then(prevResponse => {
+              if (prevResponse.data) {
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_count_prev: parseInt(prevState.total_customer_total_devices_count_prev) + parseInt(prevResponse.data[0].edrcount)
+                  }
+                })
+                setDatasourceData(prevState => {
+                  return {
+                    ...prevState,
+                    total_customer_total_devices_log_count_prev: parseInt(prevState.total_customer_total_devices_log_count_prev) + parseInt(prevResponse.data[0].totallogs)
+                  }
+                })
+              }
+            })
+            .catch((error) => {
+              console.log(error)
+            })
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+
+  }
+
+  //get client va scan count
+  const getCustomerVAScan = async () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getVAScanDataSourceDetails", {
+      params: {
+        customerId: customerId,
+        startDate: reportStartDate,
+        endDate: reportEndDate
+      }
+    })
+      .then(response => {
+        if (response.data) {
+          setDatasourceData(prevState => {
+            return {...prevState, total_customer_va_data: response.data}
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data.length)
+            }
+          })
+          setDatasourceData(prevState => {
+            return {
+              ...prevState,
+              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].evacount) + parseInt(response.data[0].ivacount)
+            }
+          })
+        }
+        //calculate new date range based on current date range difference.
+        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+
+        //get previous month log count
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getVAScanDataSourceDetails", {
+          params: {
+            customerId: customerId,
+            startDate: prevDateRange.newStartDate,
+            endDate: prevDateRange.newEndDate
+          }
+        })
+          .then(prevResponse => {
+            if (prevResponse.data.length > 0) {
+              setDatasourceData(prevState => {
+                return {
+                  ...prevState,
+                  total_customer_total_devices_count_prev: parseInt(prevState.total_customer_total_devices_count_prev) + parseInt(prevResponse.data.length)
+                }
+              })
+              setDatasourceData(prevState => {
+                return {
+                  ...prevState,
+                  total_customer_total_devices_log_count_prev: parseInt(prevState.total_customer_total_devices_log_count_prev) + parseInt(prevResponse.data[0].evacount) + parseInt(prevResponse.data[0].ivacount)
+                }
+              })
+            }
+          })
+          .catch((error) => {
+            console.log(error)
+          })
+      })
+      .catch(error => {
+
+      })
+
+  }
+
+  //get count of total logs ingested by customer Firewalls
+  const getFirewallTotalLogIngestion = async () => {
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
+      params: {
+        customerId: customerId,
+        startDate: reportStartDate,
+        endDate: reportEndDate
+      }
+    })
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count: response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_second: result}})
+        })
+
+      })
+      .catch((error) => {
         console.log(error)
       })
   }
-  //get client NAC count and logs count
-  const getCustomerNAC = async() =>{
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/nac/getNACDataSourceDetails",{params:{
+
+  //get count of total logs ingested by customer Endpoints
+  const getServerTotalLogIngestion = async () => {
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointTotalLogCount', {
+      params: {
+        customerId: customerId,
+        startDate: reportStartDate,
+        endDate: reportEndDate
+      }
+    })
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count: response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_second: result}})
+        })
+
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
+
+  //get count of total logs ingested by customer EDR
+  const getEDRTotalLogIngestion = async () => {
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/edr/getEDRLogcount', {
+      params: {
         customerId: customerId,
         startDate:reportStartDate,
         endDate:reportEndDate
       }})
-      .then(response=>{
-        if(response.data){
-          setNacData(response.data)
-          setTotalDevices(prevTotalDevices => { return prevTotalDevices+parseInt(response.data[0].naccount)})
-          setTotalLogs(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].totallogs)})
-        }
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count:response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          console.log(result)
+          setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_second: result}})
+        })
+
       })
-      .catch((error)=>{
+      .catch((error) => {
         console.log(error)
       })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
-    //get previous month log count
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/nac/getNACDataSourceDetails",{params:{
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }})
-      .then(response=>{
-        if (response.data){
-          setTotalDevicesPrev(prevTotalDevicesPrev =>{return prevTotalDevicesPrev + parseInt(response.data[0].naccount)})
-          setTotalLogsPrev(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].totallogs)})
-        }
-      })
-      .catch((error)=>{
-        console.log(error)
-      })
-
   }
-  //get client edr count and logs count
-  const getCustomerEDR = async() =>{
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEDRDataSourceDetails",{params:{
+
+  //get count of total logs ingested by customer NAC
+  const getNACTotalLogIngestion = async () => {
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/nac/getNACLogIngestionCount', {
+      params: {
         customerId: customerId,
-        startDate: reportStartDate,
-        endDate: reportEndDate
-      }})
-      .then(response=>{
-        if(response.data){
-          setEdrData(response.data)
-          setTotalDevices(prevTotalDevices => { return prevTotalDevices+parseInt(response.data[0].edrcount)})
-          setTotalLogs(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].totallogs)})
-        }
+        startDate:reportStartDate,
+        endDate:reportEndDate
+      }
+    })
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count:response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_second: result}})
+        })
+
       })
-      .catch((error)=>{
+      .catch((error) => {
         console.log(error)
       })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
-    //get previous month log count
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEDRDataSourceDetails",{params:{
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }})
-      .then(response=>{
-        if (response.data){
-          setTotalDevicesPrev(prevTotalDevicesPrev =>{return prevTotalDevicesPrev + parseInt(response.data[0].edrcount)})
-          setTotalLogsPrev(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].totallogs)})
-        }
-      })
-      .catch((error)=>{
-        console.log(error)
-      })
-
-  }
-  //get client va scan count
-  const getCustomerVAScan =async() =>{
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getVAScanDataSourceDetails",{params:{
-        customerId: customerId,
-        startDate: reportStartDate,
-        endDate: reportEndDate
-      }})
-      .then(response=>{
-        if(response.data){
-          setVaData(response.data)
-          setTotalDevices(prevTotalDevices => { return prevTotalDevices+response.data.length})
-          setTotalLogs(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].evacount)+parseInt(response.data[0].ivacount)})
-        }
-      })
-      .catch(error=>{
-
-      })
-
-    //calculate new date range based on current date range difference.
-    const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
-    //get previous month log count
-    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getVAScanDataSourceDetails",{params:{
-        customerId: customerId,
-        startDate: prevDateRange.newStartDate,
-        endDate: prevDateRange.newEndDate
-      }})
-      .then(response=>{
-        if (response.data){
-          setTotalDevicesPrev(prevTotalDevicesPrev =>{return prevTotalDevicesPrev + parseInt(response.data.length)})
-          setTotalLogsPrev(prevTotalLogs=>{return prevTotalLogs + parseInt(response.data[0].evacount)+parseInt(response.data[0].ivacount)})
-        }
-      })
-      .catch((error)=>{
-        console.log(error)
-      })
-
   }
 
   //get difference of devices count
-  const getDevicesDifference = async () =>{
-
-    data.total_devices_count_dff = getPercentageDifference(totalDevices,totalDevicesPrev)
-    await setTotalDevicesDiffPercentage(getPercentageDifference(totalDevices,totalDevicesPrev))
-
+  const getDevicesDifference = async () => {
+    await getPercentageDifference(datasourceData.total_customer_total_devices_count, datasourceData.total_customer_total_devices_count_prev).then(result => {
+      setTotalDeviceDiffPercentage(result)
+    })
   }
 
-  const getTotalLogsDifference = async () =>{
-    await setTotalLogsDiffPercentage(getPercentageDifference(totalLogs,totalLogsPrev))
+  const getTotalLogsDifference = async () => {
+    await getPercentageDifference(datasourceData.total_customer_total_devices_log_count, datasourceData.total_customer_total_devices_log_count_prev).then(result => {
+      setTotalDeviceLogCountDiffPercentage(result)
+    })
   }
 
   useEffect(() => {
-    setTotalDevices(0)
-    setTotalLogs(0)
+
+    setDatasourceData(initialValues)
+    setDataManifestData(dataManifestDatainitialValues)
+    setTotalLogCount(logCountInitialValues)
 
     Promise.all([
       getCustomerFirewalls(),
@@ -262,16 +559,49 @@ const ComponentDataSource = (props) => {
       getCustomerEDR(),
       getCustomerNAC(),
       getCustomerVAScan(),
+      getFirewallTotalLogIngestion(),
+      getServerTotalLogIngestion(),
+      getEDRTotalLogIngestion(),
+      getNACTotalLogIngestion(),
+    ])
+      .then(() => {
+
+      })
+      .catch(error => {
+
+      })
+
+    let firewallLogPercentage = getPercentage(dataManifestData.total_customer_firewall_log_ingestion_count,totalLogCount.logCount)
+    let ednpointLogPercentage = getPercentage(dataManifestData.total_customer_server_log_ingestion_count,totalLogCount.logCount)
+    let edrLogPercentage = getPercentage(dataManifestData.total_customer_edr_log_ingestion_count,totalLogCount.logCount)
+    let nacLogPercentage = getPercentage(dataManifestData.total_customer_nac_log_ingestion_count,totalLogCount.logCount)
+
+    setDataManifestData(prevState=>{return{...prevState,total_customer_firewall_log_ingestion_count_percentage: firewallLogPercentage}})
+    setDataManifestData(prevState=>{return{...prevState,total_customer_server_log_ingestion_count_percentage: ednpointLogPercentage}})
+    setDataManifestData(prevState=>{return{...prevState,total_customer_edr_log_ingestion_count_percentage: edrLogPercentage}})
+    setDataManifestData(prevState=>{return{...prevState,total_customer_nuc_log_ingestion_count_percentage: nacLogPercentage}})
+
+  }, []);
+
+  useEffect(() => {
+    Promise.all([
       getDevicesDifference(),
       getTotalLogsDifference()
-    ])
-      .then(async()=>{
-        setResult(data)
-      })
+    ]).then(()=>{
+      let firewallLogPercentage = getPercentage(dataManifestData.total_customer_firewall_log_ingestion_count,totalLogCount.logCount)
+      let ednpointLogPercentage = getPercentage(dataManifestData.total_customer_server_log_ingestion_count,totalLogCount.logCount)
+      let edrLogPercentage = getPercentage(dataManifestData.total_customer_edr_log_ingestion_count,totalLogCount.logCount)
+      let nacLogPercentage = getPercentage(dataManifestData.total_customer_nac_log_ingestion_count,totalLogCount.logCount)
+
+      setDataManifestData(prevState=>{return{...prevState,total_customer_firewall_log_ingestion_count_percentage: firewallLogPercentage}})
+      setDataManifestData(prevState=>{return{...prevState,total_customer_server_log_ingestion_count_percentage: ednpointLogPercentage}})
+      setDataManifestData(prevState=>{return{...prevState,total_customer_edr_log_ingestion_count_percentage: edrLogPercentage}})
+      setDataManifestData(prevState=>{return{...prevState,total_customer_nuc_log_ingestion_count_percentage: nacLogPercentage}})
+    })
       .catch(error=>{
         console.log(error)
       })
-  }, []);
+  }, [datasourceData,totalLogCount]);
 
   return (
     <div className="w-full h-full">
@@ -283,8 +613,14 @@ const ComponentDataSource = (props) => {
           </div>
           <div className="h-full w-10/12">
             <div className="w-full h-full flex items-center justify-center">
-              <h1
-                className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 border-b-2 uppercase">Data Source</h1>
+              <div className="w-full h-2/3 flex-col">
+                <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
+                  Data Sources
+                </h1>
+                <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
+                  {reportStartDate} - {reportEndDate}
+                </h2>
+              </div>
             </div>
           </div>
         </div>
@@ -293,7 +629,8 @@ const ComponentDataSource = (props) => {
             <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
-                  <h1 className="text-4xl text-yellow-500 font-bold">{totalDevices}</h1>
+                  <h1
+                    className="text-4xl text-yellow-500 font-bold">{datasourceData.total_customer_total_devices_count}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -304,8 +641,8 @@ const ComponentDataSource = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {totalDevicesDiffPercentage ?
-                        totalDevicesDiffPercentage >= 0 ?
+                      {totalDeviceDiffPercentage ?
+                        totalDeviceDiffPercentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -313,7 +650,7 @@ const ComponentDataSource = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{totalDevicesDiffPercentage ? totalDevicesDiffPercentage : 0} %</h1>
+                        className="text-lg text-white">{totalDeviceDiffPercentage ? totalDeviceDiffPercentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
@@ -324,7 +661,8 @@ const ComponentDataSource = (props) => {
             <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
-                  <h1 className="text-4xl text-yellow-500 font-bold">{formatNumber(totalLogs)}</h1>
+                  <h1
+                    className="text-4xl text-yellow-500 font-bold">{formatNumber(datasourceData.total_customer_total_devices_log_count)}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -335,8 +673,8 @@ const ComponentDataSource = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {totalLogsDiffPercentage ?
-                        totalLogsDiffPercentage >= 0 ?
+                      {totalDeviceLogCountDiffPercentage ?
+                        totalDeviceLogCountDiffPercentage >= 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -344,67 +682,133 @@ const ComponentDataSource = (props) => {
                         ''
                       }
                       <h1
-                        className="text-lg text-white">{totalLogsDiffPercentage ? totalLogsDiffPercentage : 0} %</h1>
+                        className="text-lg text-white">{totalDeviceLogCountDiffPercentage ? totalDeviceLogCountDiffPercentage : 0} %</h1>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          {/*<div className="col-span-12 row-span-2 px-1">*/}
-          {/*  <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">*/}
-          {/*    <div className="w-full h-full flex">*/}
-          {/*      <div className="w-1/3 h-full flex items-center justify-center">*/}
-          {/*        <h1 className="text-4xl text-yellow-500 font-bold">609</h1>*/}
-          {/*      </div>*/}
-          {/*      <div className="w-2/3 h-full flex-col">*/}
-          {/*        <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">*/}
-          {/*          <h2 className="text-xl text-white"><b>Alerts</b> Generated</h2>*/}
-          {/*        </div>*/}
-          {/*        <div className="w-full h-1/2 flex items-center">*/}
-          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
-          {/*            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>*/}
-          {/*            <h1 className="text-lg text-white">19.4 %</h1>*/}
-          {/*          </div>*/}
-          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
-          {/*            <h1 className="text-lg text-white">{new Intl.NumberFormat('en', {*/}
-          {/*              notation: 'compact',*/}
-          {/*              minimumFractionDigits: 2,*/}
-          {/*              maximumFractionDigits: 2*/}
-          {/*            }).format(8993.57)} logs/m</h1>*/}
-          {/*          </div>*/}
-          {/*        </div>*/}
-          {/*      </div>*/}
-          {/*    </div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
-          {/*<div className="col-span-12 row-span-2 px-1">*/}
-          {/*  <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">*/}
-          {/*    <div className="w-full h-full flex">*/}
-          {/*      <div className="w-1/3 h-full flex items-center justify-center">*/}
-          {/*        <h1 className="text-4xl text-yellow-500 font-bold">0</h1>*/}
-          {/*      </div>*/}
-          {/*      <div className="w-2/3 h-full flex-col">*/}
-          {/*        <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">*/}
-          {/*          <h2 className="text-xl text-white"><b>Critical</b> Advisories</h2>*/}
-          {/*        </div>*/}
-          {/*        <div className="w-full h-1/2 flex items-center">*/}
-          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
-          {/*            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>*/}
-          {/*            <h1 className="text-lg text-white">19.4 %</h1>*/}
-          {/*          </div>*/}
-          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
-          {/*            <h1 className="text-lg text-white">{new Intl.NumberFormat('en', {*/}
-          {/*              notation: 'compact',*/}
-          {/*              minimumFractionDigits: 2,*/}
-          {/*              maximumFractionDigits: 2*/}
-          {/*            }).format(8993.57)} logs/m</h1>*/}
-          {/*          </div>*/}
-          {/*        </div>*/}
-          {/*      </div>*/}
-          {/*    </div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
+          <div className="col-span-12 row-span-2 px-1">
+            <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
+              <div className="w-full h-full flex">
+                <div className="w-1/3 h-full flex items-center justify-center">
+                  <h1 className="text-4xl text-yellow-500 font-bold">
+                    {formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_percentage)} %
+                  </h1>
+                </div>
+                <div className="w-2/3 h-full flex-col">
+                  <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
+                    <h2 className="text-xl text-white"><b>Firewall</b> Log Ingestion Percentage</h2>
+                  </div>
+                  <div className="w-full h-1/2 flex items-center">
+                    <div className="w-1/2 h-full flex items-center justify-center">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_day)} logs/d</h1>
+                      </div>
+                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} logs/m</h1>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-12 row-span-2 px-1">
+            <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
+              <div className="w-full h-full flex">
+                <div className="w-1/3 h-full flex items-center justify-center">
+                  <h1 className="text-4xl text-yellow-500 font-bold">
+                    {formatNumber(dataManifestData.total_customer_server_log_ingestion_count_percentage)} %
+                  </h1>
+                </div>
+                <div className="w-2/3 h-full flex-col">
+                  <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
+                    <h2 className="text-xl text-white"><b>Server</b> Log Ingestion Percentage</h2>
+                  </div>
+                  <div className="w-full h-1/2 flex items-center">
+                    <div className="w-1/2 h-full flex items-center justify-center">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_day)} logs/d</h1>
+                      </div>
+                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} logs/m</h1>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-12 row-span-2 px-1">
+            <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
+              <div className="w-full h-full flex">
+                <div className="w-1/3 h-full flex items-center justify-center">
+                  <h1 className="text-4xl text-yellow-500 font-bold">
+                    {formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_percentage)} %
+                  </h1>
+                </div>
+                <div className="w-2/3 h-full flex-col">
+                  <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
+                    <h2 className="text-xl text-white"><b>EDR</b> Log Ingestion Percentage</h2>
+                  </div>
+                  <div className="w-full h-1/2 flex items-center">
+                    <div className="w-1/2 h-full flex items-center justify-center">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_day)} logs/d</h1>
+                      </div>
+                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)} logs/m</h1>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-span-12 row-span-2 px-1">
+            <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
+              <div className="w-full h-full flex">
+                <div className="w-1/3 h-full flex items-center justify-center">
+                  <h1 className="text-4xl text-yellow-500 font-bold">
+                    {formatNumberPercentage(dataManifestData.total_customer_nuc_log_ingestion_count_percentage)} %
+                  </h1>
+                </div>
+                <div className="w-2/3 h-full flex-col">
+                  <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
+                    <h2 className="text-xl text-white"><b>NAC</b> Log Ingestion Percentage</h2>
+                  </div>
+                  <div className="w-full h-1/2 flex items-center">
+                    <div className="w-1/2 h-full flex items-center justify-center">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_day)} logs/d</h1>
+                      </div>
+                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                        <h1
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)} logs/m</h1>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="col-span-9 row-span-14 grid grid-cols-12 grid-rows-13">
           <div className="col-span-12 row-span-13 bg-white bg-opacity-5">
@@ -427,8 +831,8 @@ const ComponentDataSource = (props) => {
                 className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center text-2xl border-b-white border-b-2">#
                 of Logs
               </div>
-              {firewallData ?
-                firewallData.map(firewall => {
+              {datasourceData.total_customer_firewall_data ?
+                datasourceData.total_customer_firewall_data.map(firewall => {
                   return (
                     <>
                       <div
@@ -451,8 +855,8 @@ const ComponentDataSource = (props) => {
                 ''
               }
 
-              {endpointData ?
-                endpointData.map(endpoint => {
+              {datasourceData.total_customer_endpoint_data ?
+                datasourceData.total_customer_endpoint_data.map(endpoint => {
                   return (
                     <>
                       <div
@@ -475,8 +879,8 @@ const ComponentDataSource = (props) => {
                 ''
               }
 
-              {edrData ?
-                edrData.map(edr => {
+              {datasourceData.total_customer_edr_data ?
+                datasourceData.total_customer_edr_data.map(edr => {
                   return (
                     <>
                       <div
@@ -499,8 +903,8 @@ const ComponentDataSource = (props) => {
                 ''
               }
 
-              {nacData ?
-                nacData.map(nac => {
+              {datasourceData.total_customer_nac_data ?
+                datasourceData.total_customer_nac_data.map(nac => {
                   return (
                     <>
                       <div
@@ -522,9 +926,8 @@ const ComponentDataSource = (props) => {
                 :
                 ''
               }
-
-              {vaData ?
-                vaData.map(va => {
+              {datasourceData.total_customer_va_data ?
+                datasourceData.total_customer_va_data.map(va => {
                   return (
                     <>
                       <div
@@ -532,12 +935,13 @@ const ComponentDataSource = (props) => {
                         <FontAwesomeIcon className="text-4xl" icon={faMagnifyingGlass}/>
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">VA SCAN
+                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">VA
+                        SCAN
                       </div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{va.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{vaData.length}</div>
+                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{datasourceData.total_customer_va_data.length}</div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{formatNumber(va.ivacount + va.evacount)}</div>
                     </>
@@ -547,15 +951,15 @@ const ComponentDataSource = (props) => {
                 ''
               }
 
-              {totalDevices && totalLogs ?
+              {datasourceData.total_customer_total_devices_count && datasourceData.total_customer_total_devices_log_count ?
                 <>
                   <div
                     className="col-span-6 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">Total
                   </div>
                   <div
-                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">{totalDevices}</div>
+                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">{datasourceData.total_customer_total_devices_count}</div>
                   <div
-                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">{formatNumber(totalLogs)}</div>
+                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">{formatNumber(datasourceData.total_customer_total_devices_log_count)}</div>
                 </>
                 :
                 <>
@@ -572,6 +976,7 @@ const ComponentDataSource = (props) => {
               }
 
             </div>
+
           </div>
         </div>
       </div>

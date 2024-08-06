@@ -6,6 +6,13 @@ export const formatNumber = function(value) {
   }).format(value)
 }
 
+export const formatNumberPercentage = (value)=>{
+  return new Intl.NumberFormat('en', {
+    minimumFractionDigits:2,
+    maximumFractionDigits:3
+  }).format(value)
+}
+
 export const getNewDateRange= function (startdate, enddate){
 
   let newStartDate = 0
@@ -14,22 +21,62 @@ export const getNewDateRange= function (startdate, enddate){
   if(startdate && enddate){
     let currentStartDate = new Date(startdate)
     let currentEndDate = new Date(enddate)
-    let diff = currentEndDate.getDate() - currentStartDate.getDate()
-    newStartDate = new Date(currentStartDate.setDate(currentStartDate.getDate() - diff)).toLocaleDateString("en-CA")
-    newEndDate = new Date(currentEndDate.setDate(currentEndDate.getDate() - diff)).toLocaleDateString("en-CA")
+    let diff = Math.abs(currentEndDate - currentStartDate)
+    let days = Math.ceil(diff / (1000*60*60*24))
+    // newStartDate = currentStartDate.setDate(currentStartDate.getDate() - diff)
+    // newEndDate = currentEndDate.setDate(currentEndDate.getDate() - diff)
+    // newStartDate = new Date(currentStartDate.setDate(currentStartDate.getDate() - diff)).toLocaleDateString("en-CA")
+    // newEndDate = new Date(currentEndDate.setDate(currentEndDate.getDate() - diff)).toLocaleDateString("en-CA")
+
+    newStartDate = new Date(currentStartDate.setDate(currentStartDate.getDate() - days)).toLocaleDateString("en-CA")
+    newEndDate = new Date(currentEndDate.setDate(currentEndDate.getDate() - days)).toLocaleDateString("en-CA")
   }
 
   return {newStartDate, newEndDate}
 }
 
-export const getPercentageDifference = function(currentLogs , previouslogs){
-  if(previouslogs <= 0){
+export const getPercentage = (partialValue, totalValue) =>{
+  return (100 * partialValue) / totalValue;
+}
+
+export const getPercentageDifference = async(currentLogs , previouslogs) =>{
+  if (previouslogs === 0 && currentLogs ===0){
+    return 0
+  }else if(previouslogs <= 0){
     return 100
   }else if(currentLogs <= 0){
     return -100
   }else{
     return (((currentLogs-previouslogs)/previouslogs) * 100).toFixed(2)
   }
+}
+
+export const getAverageLogsPerDay = async(startDate,endDate,logsCount)=>{
+  let currentStartDate = new Date(startDate)
+  let currentEndDate = new Date(endDate)
+  let diff = Math.abs(currentEndDate - currentStartDate)
+  let days = Math.ceil(diff / (1000*60*60*24))
+
+  return (logsCount/days)
+
+}
+
+export const getAverageLogsPerMinuts = async(startDate,endDate,logsCount)=>{
+  let currentStartDate = new Date(startDate)
+  let currentEndDate = new Date(endDate)
+  let diff = Math.abs(currentEndDate - currentStartDate)
+  let minutes = Math.ceil(diff / (1000*60))
+
+  return (logsCount/minutes)
+}
+
+export const getAverageLogsPerSeconds = async (startDate,endDate,logsCount)=>{
+  let currentStartDate = new Date(startDate)
+  let currentEndDate = new Date(endDate)
+  let diff = Math.abs(currentEndDate - currentStartDate)
+  let seconds = Math.ceil(diff / (1000))
+
+  return Math.ceil(logsCount/seconds)
 }
 
 export const backgroundColorListHex = [

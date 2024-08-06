@@ -8,31 +8,54 @@ import userContext from "@/context/userContext";
 import {
   chartBackgroundColorsList,
   chartBackgroundColorsListOpacity40,
-  formatNumber, getNewDateRange, getPercentageDifference
+  formatNumber,
+  getNewDateRange,
+  getPercentageDifference,
+  getAverageLogsPerDay,
+  getAverageLogsPerMinuts,
+  getAverageLogsPerSeconds, getPercentage
 } from "@/Utilities/Utilities"
 
 const ComponentDataManifest = (props) => {
 
+  //get user context data
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
-  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
 
-  const [result, setResult] = useState({})
-  let data = {
-    total_firewall_subscriptions_count: 0,   //firewall/getFirewallCount
-    total_server_subscriptions_count: 0,  //endpoint/getEndpointCount
-    total_edr_subscriptions_count: 0, //edr/getEDRCount
-    total_nac_subscriptions_count: 0,  //nac/getNACCount
-    total_firewall_log_ingestion_count: 0, //firewall/getFirewallTotalLogCount
-    total_server_log_ingestion_count: 0, //endpoint/getEndpointTotalLogCount
-    total_edr_log_ingestion_count: 0, //edr/getEDRLogcount
-    total_nac_log_ingestion_count: 0, //nac/getNACLogIngestionCount
-    average_firewall_log_ingestion_count: 0, //find-total-target-usernames-count
-    average_server_log_ingestion_count: 0, //find-total-registry-changes-count
-    average_edr_log_ingestion_count: 0, //find-total-service-creation-count
-    average_nac_log_ingestion_count: 0//find-total-process-creation-count
+  const initialValues = {
+    total_customer_firewall_subscriptions_count: 0,
+    total_customer_server_subscriptions_count: 0,
+    total_customer_edr_subscriptions_count: 0,
+    total_customer_nac_subscriptions_count: 0,
+    total_customer_firewall_log_ingestion_count: 0,
+    total_customer_server_log_ingestion_count: 0,
+    total_customer_edr_log_ingestion_count: 0,
+    total_customer_nac_log_ingestion_count: 0,
+    total_customer_firewall_log_ingestion_count_average_day: 0,
+    total_customer_server_log_ingestion_count_average_day: 0,
+    total_customer_edr_log_ingestion_count_average_day: 0,
+    total_customer_nac_log_ingestion_count_average_day: 0,
+    total_customer_firewall_log_ingestion_count_average_minute: 0,
+    total_customer_server_log_ingestion_count_average_minute: 0,
+    total_customer_edr_log_ingestion_count_average_minute: 0,
+    total_customer_nac_log_ingestion_count_average_minute: 0,
+    total_customer_firewall_log_ingestion_count_average_second: 0,
+    total_customer_server_log_ingestion_count_average_second: 0,
+    total_customer_edr_log_ingestion_count_average_second: 0,
+    total_customer_nac_log_ingestion_count_average_second: 0,
+    total_customer_firewall_log_ingestion_count_percentage:0,
+    total_customer_server_log_ingestion_count_percentage:0,
+    total_customer_edr_log_ingestion_count_percentage:0,
+    total_customer_nac_log_ingestion_count_percentage:0,
   }
+
+  const logCountInitialValues = {logCount:0}
+
+  const [dataManifestData,setDataManifestData] = useState(initialValues)
+  const [totalLogCount,setTotalLogCount] = useState(logCountInitialValues)
 
 
   //get unique Firewalls count for a customer
@@ -44,7 +67,9 @@ const ComponentDataManifest = (props) => {
         }
     })
       .then(response => {
-        data.total_firewall_subscriptions_count = response.data[0].clientfirewallcount
+        setDataManifestData(prevState => {
+          return {...prevState, total_customer_firewall_subscriptions_count: response.data[0].clientfirewallcount}
+        })
       })
       .catch((error) => {
         console.log(error)
@@ -60,7 +85,7 @@ const ComponentDataManifest = (props) => {
         endDate: reportEndDate
       }})
       .then(response => {
-        data.total_server_subscriptions_count = response.data[0].hostcount
+        setDataManifestData(prevState => {return{...prevState,total_customer_server_subscriptions_count: response.data[0].hostcount}})
       })
       .catch((error) => {
         console.log(error)
@@ -77,8 +102,7 @@ const ComponentDataManifest = (props) => {
       }
     })
       .then(response => {
-        console.log('deijoijis', response.data)
-        data.total_edr_subscriptions_count = response.data[0].clientedrcount
+        setDataManifestData(prevState => {return{...prevState,total_customer_edr_subscriptions_count:response.data[0].clientedrcount}})
       })
       .catch((error) => {
         console.log(error)
@@ -95,7 +119,7 @@ const ComponentDataManifest = (props) => {
       }
     })
       .then(response => {
-        data.total_nac_subscriptions_count = response.data[0].clientnaccount
+        setDataManifestData(prevState => {return{...prevState,total_customer_nac_subscriptions_count:response.data[0].clientnaccount}})
       })
       .catch((error) => {
         console.log(error)
@@ -111,8 +135,22 @@ const ComponentDataManifest = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_firewall_log_ingestion_count = response.data[0].logcount
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count: response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_second: result}})
+        })
+
       })
       .catch((error) => {
         console.log(error)
@@ -128,8 +166,22 @@ const ComponentDataManifest = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        data.total_server_log_ingestion_count = response.data[0].logcount
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count: response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_second: result}})
+        })
+
       })
       .catch((error) => {
         console.log(error)
@@ -144,8 +196,23 @@ const ComponentDataManifest = (props) => {
         startDate:reportStartDate,
         endDate:reportEndDate
       }})
-      .then(response => {
-        data.total_edr_log_ingestion_count = response.data[0].logcount
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count:response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          console.log(result)
+          setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_second: result}})
+        })
+
       })
       .catch((error) => {
         console.log(error)
@@ -161,8 +228,22 @@ const ComponentDataManifest = (props) => {
         endDate:reportEndDate
       }
     })
-      .then(response => {
-        data.total_nac_log_ingestion_count = response.data[0].logcount
+      .then(async response => {
+        setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count:response.data[0].logcount}})
+        setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
+
+        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_day: result}})
+        })
+
+        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_minute: result}})
+        })
+
+        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_second: result}})
+        })
+
       })
       .catch((error) => {
         console.log(error)
@@ -170,6 +251,8 @@ const ComponentDataManifest = (props) => {
   }
 
   useEffect(() => {
+    setDataManifestData(initialValues)
+    setTotalLogCount(logCountInitialValues)
     Promise.all([
       getUniqueFirewallCount(),
       getUniqueServerCount(),
@@ -180,10 +263,24 @@ const ComponentDataManifest = (props) => {
       getEDRTotalLogIngestion(),
       getNACTotalLogIngestion(),
     ]).then(() => {
-      setResult(data)
+
     })
 
   }, [])
+
+
+  useEffect(() => {
+
+    let firewallLogPercentage = getPercentage(dataManifestData.total_customer_firewall_log_ingestion_count,totalLogCount.logCount)
+    let ednpointLogPercentage = getPercentage(dataManifestData.total_customer_server_log_ingestion_count,totalLogCount.logCount)
+    let edrLogPercentage = getPercentage(dataManifestData.total_customer_edr_log_ingestion_count,totalLogCount.logCount)
+    let nacLogPercentage = getPercentage(dataManifestData.total_customer_nac_log_ingestion_count,totalLogCount.logCount)
+    setDataManifestData(prevState=>{return{...prevState,total_customer_firewall_log_ingestion_count_percentage: firewallLogPercentage}})
+    setDataManifestData(prevState=>{return{...prevState,total_customer_server_log_ingestion_count_percentage: ednpointLogPercentage}})
+    setDataManifestData(prevState=>{return{...prevState,total_customer_edr_log_ingestion_count_percentage: edrLogPercentage}})
+    setDataManifestData(prevState=>{return{...prevState,total_customer_nuc_log_ingestion_count_percentage: nacLogPercentage}})
+
+  }, [totalLogCount]);
 
   return (
     <div className="w-full h-full">
@@ -195,9 +292,14 @@ const ComponentDataManifest = (props) => {
           </div>
           <div className="h-full w-10/12">
             <div className="w-full h-full flex items-center justify-center">
-              <h1
-                className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 border-b-2 uppercase">Data
-                Manifest</h1>
+              <div className="w-full h-2/3 flex-col">
+                <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
+                  Data Manifest
+                </h1>
+                <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
+                  {reportStartDate} - {reportEndDate}
+                </h2>
+              </div>
             </div>
           </div>
         </div>
@@ -207,7 +309,7 @@ const ComponentDataManifest = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {result.total_firewall_subscriptions_count}
+                    {dataManifestData.total_customer_firewall_subscriptions_count ? dataManifestData.total_customer_firewall_subscriptions_count : 0}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -218,13 +320,13 @@ const ComponentDataManifest = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_firewall_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_day)} logs/d</h1>
                       </div>
                       <div className="h-1/2 w-full flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_firewall_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} logs/m</h1>
                       </div>
                     </div>
                   </div>
@@ -237,7 +339,7 @@ const ComponentDataManifest = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {result.total_server_subscriptions_count}
+                    {dataManifestData.total_customer_server_subscriptions_count ? dataManifestData.total_customer_server_subscriptions_count : 0}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -248,13 +350,13 @@ const ComponentDataManifest = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_server_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_day)} logs/d</h1>
                       </div>
                       <div className="h-1/2 w-full flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_server_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} logs/m</h1>
                       </div>
                     </div>
                   </div>
@@ -267,7 +369,7 @@ const ComponentDataManifest = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {result.total_edr_subscriptions_count}
+                    {dataManifestData.total_customer_edr_subscriptions_count ? dataManifestData.total_customer_edr_subscriptions_count : 0}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -278,13 +380,13 @@ const ComponentDataManifest = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_edr_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_day)} logs/d</h1>
                       </div>
                       <div className="h-1/2 w-full flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_edr_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)} logs/m</h1>
                       </div>
                     </div>
                   </div>
@@ -297,7 +399,7 @@ const ComponentDataManifest = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1 className="text-4xl text-yellow-500 font-bold">
-                    {result.total_nac_subscriptions_count}
+                    {dataManifestData.total_customer_nac_subscriptions_count ? dataManifestData.total_customer_nac_subscriptions_count : 0}
                   </h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
@@ -308,13 +410,13 @@ const ComponentDataManifest = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
+                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_nac_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_day)} logs/d</h1>
                       </div>
                       <div className="h-1/2 w-full flex items-center justify-end px-2">
                         <h1
-                          className="text-sm text-white">{formatNumber(result.total_nac_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)} logs/m</h1>
                       </div>
                     </div>
                   </div>
@@ -322,94 +424,217 @@ const ComponentDataManifest = (props) => {
               </div>
             </div>
           </div>
-          <div className="col-span-12 row-span-1 px-1">
-            <div
-              className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black flex items-center justify-center">
-              <h1 className="text-xl text-yellow-500 font-bold">SIEM Performance Matrix</h1>
-            </div>
-          </div>
-          <div className="col-span-6 row-span-2 px-1">
-            <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
-              <div className="w-full h-full flex">
-                <div className="w-1/3 h-full flex items-center justify-center">
-                  <h1 className="text-2xl text-yellow-500 font-bold">11.5</h1>
-                </div>
-                <div className="w-2/3 h-full flex-col">
-                  <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
-                    <h2 className="text-xl text-white"><b>MTTD</b></h2>
-                  </div>
-                  <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                      <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
-                      <h1 className="text-sm text-white">19.4 %</h1>
-                    </div>
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                      <h1 className="text-sm text-white">{new Intl.NumberFormat('en', {
-                        notation: 'compact',
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      }).format(8993.57)} logs/m</h1>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="col-span-6 row-span-2 px-1">
-            <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
-              <div className="w-full h-full flex">
-                <div className="w-1/3 h-full flex items-center justify-center">
-                  <h1 className="text-2xl text-yellow-500 font-bold">&lt; 200</h1>
-                </div>
-                <div className="w-2/3 h-full flex-col">
-                  <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
-                    <h2 className="text-xl text-white"><b>Query</b> Time</h2>
-                  </div>
-                  <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                      <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
-                      <h1 className="text-sm text-white">19.4 %</h1>
-                    </div>
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                      <h1 className="text-sm text-white">{new Intl.NumberFormat('en', {
-                        notation: 'compact',
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      }).format(8993.57)} logs/m</h1>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/*<div className="col-span-12 row-span-1 px-1">*/}
+          {/*  <div*/}
+          {/*    className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black flex items-center justify-center">*/}
+          {/*    <h1 className="text-xl text-yellow-500 font-bold">SIEM Performance Matrix</h1>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
+          {/*<div className="col-span-6 row-span-2 px-1">*/}
+          {/*  <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">*/}
+          {/*    <div className="w-full h-full flex">*/}
+          {/*      <div className="w-1/3 h-full flex items-center justify-center">*/}
+          {/*        <h1 className="text-2xl text-yellow-500 font-bold">11.5</h1>*/}
+          {/*      </div>*/}
+          {/*      <div className="w-2/3 h-full flex-col">*/}
+          {/*        <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">*/}
+          {/*          <h2 className="text-xl text-white"><b>MTTD</b></h2>*/}
+          {/*        </div>*/}
+          {/*        <div className="w-full h-1/2 flex items-center">*/}
+          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
+          {/*            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>*/}
+          {/*            <h1 className="text-sm text-white">19.4 %</h1>*/}
+          {/*          </div>*/}
+          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
+          {/*            <h1 className="text-sm text-white">{new Intl.NumberFormat('en', {*/}
+          {/*              notation: 'compact',*/}
+          {/*              minimumFractionDigits: 2,*/}
+          {/*              maximumFractionDigits: 2*/}
+          {/*            }).format(8993.57)} logs/m</h1>*/}
+          {/*          </div>*/}
+          {/*        </div>*/}
+          {/*      </div>*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
+          {/*<div className="col-span-6 row-span-2 px-1">*/}
+          {/*  <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">*/}
+          {/*    <div className="w-full h-full flex">*/}
+          {/*      <div className="w-1/3 h-full flex items-center justify-center">*/}
+          {/*        <h1 className="text-2xl text-yellow-500 font-bold">&lt; 200</h1>*/}
+          {/*      </div>*/}
+          {/*      <div className="w-2/3 h-full flex-col">*/}
+          {/*        <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">*/}
+          {/*          <h2 className="text-xl text-white"><b>Query</b> Time</h2>*/}
+          {/*        </div>*/}
+          {/*        <div className="w-full h-1/2 flex items-center">*/}
+          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
+          {/*            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>*/}
+          {/*            <h1 className="text-sm text-white">19.4 %</h1>*/}
+          {/*          </div>*/}
+          {/*          <div className="w-1/2 h-full flex items-center justify-center">*/}
+          {/*            <h1 className="text-sm text-white">{new Intl.NumberFormat('en', {*/}
+          {/*              notation: 'compact',*/}
+          {/*              minimumFractionDigits: 2,*/}
+          {/*              maximumFractionDigits: 2*/}
+          {/*            }).format(8993.57)} logs/m</h1>*/}
+          {/*          </div>*/}
+          {/*        </div>*/}
+          {/*      </div>*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
         </div>
         <div className="col-span-9 row-span-14 grid grid-cols-12 grid-rows-12 gap-2">
           <div className="col-span-12 row-span-14 px-1">
             <div className="w-full h-full grid grid-rows-12 grid-cols-8 gap-2">
-              <div className="col-span-4 row-span-9">
-                <div
-                  className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
+              <div className="col-span-4 row-span-12">
+                <div className="w-full h-3/6 p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
                   <div className="h-1/6 w-full">
-                    <h1 className="text-3xl flex items-center justify-center text-white">
+                    <h1 className="text-3xl text-white flex items-center justify-center border-b">
                       Log Ingestion Breakdown
                     </h1>
+                    <h2 className="text-lg text-white flex items-center justify-center">Total Logs: {formatNumber(totalLogCount.logCount)}</h2>
                   </div>
-                  <div className="h-5/6 w-full flex items-center justify-center">
-                    {result ?
-                      <ComponentPieChart
-                        labels={['Firewall', 'Endpoint', 'EDR', 'NAC']}
-                        logdata={[
-                          result.total_firewall_log_ingestion_count,
-                          result.total_server_log_ingestion_count,
-                          result.total_edr_log_ingestion_count,
-                          result.total_nac_log_ingestion_count
-                        ]}
-                      />
-                      : ''}
+                  <div className="h-5/6 w-full flex flex-wrap items-center justify-center">
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                      <div className="text-4xl text-white border-b">
+                        <h1>Firewall</h1>
+                      </div>
+                      <div className="text-white w-full h-full flex items-center justify-center">
+                        <h2 className="text-4xl px-1">
+                          {formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count)}
+                        </h2>
+                        <label
+                          className="text-sm">( {formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_percentage)} %
+                          )</label>
+                      </div>
+                      </div>
+                    </div>
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                      <div className="text-4xl text-white border-b">
+                        <h1>Endpoint</h1>
+                      </div>
+                      <div className="text-white w-full h-full flex items-center justify-center">
+                        <h2 className="text-4xl px-1">
+                          {formatNumber(dataManifestData.total_customer_server_log_ingestion_count)}
+                        </h2>
+                        <label
+                          className="text-sm">( {formatNumber(dataManifestData.total_customer_server_log_ingestion_count_percentage)} %
+                          )</label>
+                      </div>
+                      </div>
+                    </div>
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                      <div className="text-4xl text-white border-b">
+                        <h1>EDR</h1>
+                      </div>
+                      <div className="text-white w-full h-full flex items-center justify-center">
+                        <h2 className="text-4xl px-1">
+                          {formatNumber(dataManifestData.total_customer_edr_log_ingestion_count)}
+                        </h2>
+                        <label
+                          className="text-sm">( {formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_percentage)} %
+                          )</label>
+                      </div>
+                      </div>
+                    </div>
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                      <div className="text-4xl text-white border-b">
+                        <h1>NAC</h1>
+                      </div>
+                      <div className="text-white w-full h-full flex items-center justify-center">
+                        <h2 className="text-4xl px-1">
+                          {formatNumber(dataManifestData.total_customer_nac_log_ingestion_count)}
+                        </h2>
+                        <label
+                          className="text-sm">( {formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_percentage)} %
+                          )</label>
+                      </div>
+                      </div>
+                    </div>
+                    {/*{dataManifestData ?*/}
+                    {/*  <ComponentPieChart*/}
+                    {/*    labels={['Firewall', 'Endpoint', 'EDR', 'NAC']}*/}
+                    {/*    logdata={[*/}
+                    {/*      dataManifestData.total_customer_firewall_log_ingestion_count,*/}
+                    {/*      dataManifestData.total_customer_server_log_ingestion_count,*/}
+                    {/*      dataManifestData.total_customer_edr_log_ingestion_count,*/}
+                    {/*      dataManifestData.total_customer_nac_log_ingestion_count,*/}
+                    {/*    ]}*/}
+                    {/*  />*/}
+                    {/*  : ''}*/}
+                  </div>
+                </div>
+                <div className="w-full h-3/6 p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
+                  <div className="h-1/6 w-full">
+                    <h1 className="text-3xl text-white flex items-center justify-center border-b">
+                      Average Log Ingestion Rate
+                    </h1>
+                    <h2 className="text-lg text-white flex items-center justify-center">
+                    </h2>
+                  </div>
+                  <div className="h-5/6 w-full flex flex-wrap items-center justify-center">
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                        <div className="text-4xl text-white border-b">
+                          <h1>Firewall</h1>
+                        </div>
+                        <div className="text-white w-full h-full flex items-center justify-center">
+                          <h2 className="text-4xl px-1">
+                            {dataManifestData.total_customer_firewall_log_ingestion_count_average_second}
+                          </h2>
+                          <label className="text-sm">logs/sec </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                        <div className="text-4xl text-white border-b">
+                          <h1>Endpoint</h1>
+                        </div>
+                        <div className="text-white w-full h-full flex items-center justify-center">
+                          <h2 className="text-4xl px-1">
+                            {dataManifestData.total_customer_server_log_ingestion_count_average_second}
+                          </h2>
+                          <label className="text-sm">logs/sec </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                        <div className="text-4xl text-white border-b">
+                          <h1>EDR</h1>
+                        </div>
+                        <div className="text-white w-full h-full flex items-center justify-center">
+                          <h2 className="text-4xl px-1">
+                            {dataManifestData.total_customer_edr_log_ingestion_count_average_second}
+                          </h2>
+                          <label className="text-sm">logs/sec </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-2/4 h-2/4 p-2">
+                      <div className="w-full h-full bg-white/10 p-2">
+                        <div className="text-4xl text-white border-b">
+                          <h1>NAC</h1>
+                        </div>
+                        <div className="text-white w-full h-full flex items-center justify-center">
+                          <h2 className="text-4xl px-1">
+                            {dataManifestData.total_customer_nac_log_ingestion_count_average_second}
+                          </h2>
+                          <label className="text-sm">logs/sec </label>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="col-span-4 row-span-9">
+              <div className="col-span-4 row-span-12">
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
                   <div className="h-1/6 w-full">
@@ -417,83 +642,59 @@ const ComponentDataManifest = (props) => {
                       Average Log Ingestion Rate
                     </h1>
                   </div>
-                  <div className="h-5/6 w-full flex items-center justify-center">
-                    <ComponentHorizontalBarChart
-                      labels={['Firewall', 'Endpoint', 'EDR', 'NAC']}
-                      logdata={[
-                        (result.total_firewall_log_ingestion_count / 2592000),
-                        (result.total_server_log_ingestion_count / 2592000),
-                        (result.total_edr_log_ingestion_count / 2592000),
-                        (result.total_nac_log_ingestion_count / 2592000)
-                      ]}/>
-                  </div>
-                </div>
-              </div>
-              <div className="col-span-8 row-span-3">
-                <div className="w-full h-full flex">
-                  <div className="w-3/12 p-2 text-white">
-                    <div className="w-full h-full bg-white bg-opacity-5 rounded-lg">
-                      <div className="w-full h-12 flex items-center justify-center">
-                        <h1 className="text-2xl font-bold text-red-700 uppercase">Data Reservoir</h1>
-                      </div>
-                      <div className="w-full h-20 flex">
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">Total</h1>
-                        </div>
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">8.25 TB</h1>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-                  <div className="w-3/12 p-2 text-white">
-                    <div className="w-full h-full bg-white bg-opacity-5 rounded-lg">
-                      <div className="w-full h-12 flex items-center justify-center">
-                        <h1 className="text-2xl font-bold text-red-700 uppercase">Hot Node</h1>
-                      </div>
-                      <div className="w-full h-20 flex">
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">8 days</h1>
-                        </div>
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">3.65 TB</h1>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-                  <div className="w-3/12 p-2 text-white">
-                    <div className="w-full h-full bg-white bg-opacity-5 rounded-lg">
-                      <div className="w-full h-12 flex items-center justify-center">
-                        <h1 className="text-2xl font-bold text-yellow-500">Warm Node</h1>
-                      </div>
-                      <div className="w-full h-20 flex">
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">32 days</h1>
-                        </div>
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">2.15 TB</h1>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-                  <div className="w-3/12 p-2 text-white">
-                    <div className="w-full h-full bg-white bg-opacity-5 rounded-lg">
-                      <div className="w-full h-12 flex items-center justify-center">
-                        <h1 className="text-2xl font-bold text-blue-700">Frozen Node</h1>
-                      </div>
-                      <div className="w-full h-20 flex">
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">32 days</h1>
-                        </div>
-                        <div className="w-1/2 h-20 flex items-center justify-center">
-                          <h1 className="text-3xl font-bold">2.43 TB</h1>
-                        </div>
-                      </div>
-
-                    </div>
+                  <div className="h-5/6 w-full flex items-center justify-center gap-2">
+                    {/*<div className="w-1/4 h-24 bg-white/10 p-2">*/}
+                    {/*  <div className="text-4xl text-white border-b">*/}
+                    {/*    <h1>Firewall</h1>*/}
+                    {/*  </div>*/}
+                    {/*  <div className="text-white flex">*/}
+                    {/*    <h2 className="text-2xl px-1">*/}
+                    {/*      {dataManifestData.total_customer_firewall_log_ingestion_count_average_second}*/}
+                    {/*    </h2>*/}
+                    {/*    <label className="text-sm">logs/sec </label>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
+                    {/*<div className="w-1/4 h-24 bg-white/10 p-2">*/}
+                    {/*  <div className="text-4xl text-white border-b">*/}
+                    {/*    <h1>Endpoint</h1>*/}
+                    {/*  </div>*/}
+                    {/*  <div className="text-white flex">*/}
+                    {/*    <h2 className="text-2xl px-1">*/}
+                    {/*      {dataManifestData.total_customer_server_log_ingestion_count_average_second}*/}
+                    {/*    </h2>*/}
+                    {/*    <label className="text-sm">logs/sec </label>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
+                    {/*<div className="w-1/4 h-24 bg-white/10 p-2">*/}
+                    {/*  <div className="text-4xl text-white border-b">*/}
+                    {/*    <h1>EDR</h1>*/}
+                    {/*  </div>*/}
+                    {/*  <div className="text-white flex">*/}
+                    {/*    <h2 className="text-2xl px-1">*/}
+                    {/*      {dataManifestData.total_customer_edr_log_ingestion_count_average_second}*/}
+                    {/*    </h2>*/}
+                    {/*    <label className="text-sm">logs/sec </label>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
+                    {/*<div className="w-1/4 h-24 bg-white/10 p-2">*/}
+                    {/*  <div className="text-4xl text-white border-b">*/}
+                    {/*    <h1>NAC</h1>*/}
+                    {/*  </div>*/}
+                    {/*  <div className="text-white flex">*/}
+                    {/*    <h2 className="text-2xl px-1">*/}
+                    {/*      {dataManifestData.total_customer_nac_log_ingestion_count_average_second}*/}
+                    {/*    </h2>*/}
+                    {/*    <label className="text-sm">logs/sec </label>*/}
+                    {/*  </div>*/}
+                    {/*</div>*/}
+                    {/*<ComponentHorizontalBarChart*/}
+                    {/*  labels={['Firewall', 'Endpoint', 'EDR', 'NAC']}*/}
+                    {/*  logdata={[*/}
+                    {/*    dataManifestData.total_customer_firewall_log_ingestion_count_average_second,*/}
+                    {/*    dataManifestData.total_customer_server_log_ingestion_count_average_second,*/}
+                    {/*    dataManifestData.total_customer_edr_log_ingestion_count_average_second,*/}
+                    {/*    dataManifestData.total_customer_nac_log_ingestion_count_average_second*/}
+                    {/*  ]}/>*/}
                   </div>
                 </div>
               </div>

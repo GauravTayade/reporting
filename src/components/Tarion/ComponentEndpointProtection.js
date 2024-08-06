@@ -4,8 +4,6 @@ import {faArrowUp, faCaretUp} from "@fortawesome/free-solid-svg-icons";
 import {useContext, useEffect, useState} from "react";
 import userContext from "@/context/userContext";
 import axios from "axios"
-// import {Editor, EditorState} from "draft-js"
-// import 'draft-js/dist/Draft.css'
 
 
 const ComponentEndpointProtection = (props) =>{
@@ -20,17 +18,33 @@ const ComponentEndpointProtection = (props) =>{
     total_phishing_detected:0,
     total_url_filter_detected:0,
     total_threat_extraction_count:0,
-    total_threat_emulation_count:0
+    total_threat_emulation_count:0,
+    total_log_counts_permitted:0,
+    total_endpoints_subscription_permitted:0,
+    total_trojan_detected_permitted:0,
+    total_riskware_detected_permitted:0,
+    total_malware_detected_permitted:0,
+    total_ransomware_detected_permitted:0,
+    total_phishing_detected_permitted:0,
+    total_url_filter_detected_permitted:0,
+    total_threat_extraction_count_permitted:0,
+    total_threat_emulation_count_permitted:0
   }
 
+  //get user context data
   const userDataContext = useContext(userContext)
-  const customerId = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportStartDate : null
-  const reportEndDate = userDataContext.selectedCustomer ? userDataContext.selectedCustomer[0].reportEndDate : null
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
 
   const [result,setResult] = useState()
   const [deviceType,setDeviceType] = useState()
-  // const [editorState,setEditorState] = useState(()=>EditorState.createEmpty())
+
+
+  const handleA2NRemarksChange = (content) =>{
+
+  }
 
   const getEDRDeviceTypes = async ()=>{
     let deviceTypesTemp={}
@@ -57,7 +71,6 @@ const ComponentEndpointProtection = (props) =>{
       }
     })
       .then(response =>{
-        console.log(response)
         data.total_log_counts = response.data[0].logcount
         data.total_endpoints_subscription = response.data[0].edrcount
         data.total_trojan_detected = response.data[0].trojancount
@@ -74,11 +87,37 @@ const ComponentEndpointProtection = (props) =>{
       })
   }
 
+  const getEDRPermittedMetricsData = async() =>{
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEDRMPermittedMtricsData",{
+    params:{
+      customerId: customerId,
+      startDate: reportStartDate,
+      endDate: reportEndDate
+    }
+    })
+      .then(response=>{
+        data.total_log_counts_permitted = response.data[0].logcount
+        data.total_endpoints_subscription_permitted = response.data[0].edrcount
+        data.total_trojan_detected_permitted = response.data[0].trojancount
+        data.total_riskware_detected_permitted = response.data[0].riskwarecount
+        data.total_malware_detected_permitted = response.data[0].malwarecount
+        data.total_ransomware_detected_permitted = response.data[0].ransomwarecount
+        data.total_phishing_detected_permitted = response.data[0].phishingcount
+        data.total_url_filter_detected_permitted = response.data[0].urlfiltercount
+        data.total_threat_extraction_count_permitted = response.data[0].threatextractioncount
+        data.total_threat_emulation_count_permitted = response.data[0].threatemulationcount
+      })
+      .catch(error=>{
+        console.log(error)
+      })
+  }
+
 
   useEffect(() => {
     Promise.all([
       getEDRMetricsData(),
-      getEDRDeviceTypes()
+      getEDRDeviceTypes(),
+      getEDRPermittedMetricsData()
     ])
       .then(()=>{
         setResult(data)
@@ -99,8 +138,14 @@ const ComponentEndpointProtection = (props) =>{
           </div>
           <div className="h-full w-10/12">
             <div className="w-full h-full flex items-center justify-center">
-              <h1
-                className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 border-b-2 uppercase">Endpoint Protection</h1>
+              <div className="w-full h-2/3 flex-col">
+                <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
+                  Endpoint Protection
+                </h1>
+                <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
+                  {reportStartDate} - {reportEndDate}
+                </h2>
+              </div>
             </div>
           </div>
         </div>
@@ -109,7 +154,7 @@ const ComponentEndpointProtection = (props) =>{
             <div className="w-full h-full rounded shadow-lg bg-white bg-opacity-5 text-black">
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
-                  <h1 className="text-4xl text-yellow-500 font-bold">{result?result.total_endpoints_subscription:0}</h1>
+                <h1 className="text-4xl text-yellow-500 font-bold">{result?result.total_endpoints_subscription:0}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">
@@ -251,29 +296,10 @@ const ComponentEndpointProtection = (props) =>{
                             <h1 className="text-xl text-center">Trojans</h1>
                           </div>
                           <div className="h-2/6 flex items-center justify-center">
-                            <h1 className="text-3xl font-semibold">{result?result.total_trojan_detected:0}<small>/16</small></h1>
+                            <h1 className="text-3xl font-semibold">{result?result.total_trojan_detected:0}<small>/{result?result.total_trojan_detected_permitted : 0}</small></h1>
                           </div>
                           <div className="h-2/6 flex">
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">MoM Trend</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>5.9%
-                                </h1>
-                              </div>
-                            </div>
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">Efficiency</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>100%
-                                </h1>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       </div>
@@ -283,29 +309,10 @@ const ComponentEndpointProtection = (props) =>{
                             <h1 className="text-xl text-center">URL Filtering</h1>
                           </div>
                           <div className="h-2/6 flex items-center justify-center">
-                            <h1 className="text-3xl font-semibold">{result? result.total_url_filter_detected:0}<small>/5739</small></h1>
+                            <h1 className="text-3xl font-semibold">{result? result.total_url_filter_detected:0}<small>/{result?result.total_url_filter_detected_permitted:0}</small></h1>
                           </div>
                           <div className="h-2/6 flex">
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">MoM Trend</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>5.9%
-                                </h1>
-                              </div>
-                            </div>
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">Efficiency</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>100%
-                                </h1>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       </div>
@@ -315,29 +322,10 @@ const ComponentEndpointProtection = (props) =>{
                             <h1 className="text-xl text-center">Malware</h1>
                           </div>
                           <div className="h-2/6 flex items-center justify-center">
-                            <h1 className="text-3xl font-semibold">{result? result.total_malware_detected:0}<small>/1</small></h1>
+                            <h1 className="text-3xl font-semibold">{result? result.total_malware_detected:0}<small>/{result ? result.total_malware_detected_permitted:0}</small></h1>
                           </div>
                           <div className="h-2/6 flex">
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">MoM Trend</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>5.9%
-                                </h1>
-                              </div>
-                            </div>
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">Efficiency</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>100%
-                                </h1>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       </div>
@@ -347,29 +335,10 @@ const ComponentEndpointProtection = (props) =>{
                             <h1 className="text-xl text-center">Riskware</h1>
                           </div>
                           <div className="h-2/6 flex items-center justify-center">
-                            <h1 className="text-3xl font-semibold">{result? result.total_riskware_detected:0}<small>/1</small></h1>
+                            <h1 className="text-3xl font-semibold">{result? result.total_riskware_detected:0}<small>/{result? result.total_riskware_detected_permitted : 0}</small></h1>
                           </div>
                           <div className="h-2/6 flex">
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">MoM Trend</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>0%
-                                </h1>
-                              </div>
-                            </div>
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">Efficiency</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>100%
-                                </h1>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       </div>
@@ -389,29 +358,10 @@ const ComponentEndpointProtection = (props) =>{
                             <h1 className="text-xl text-center">Ransomware</h1>
                           </div>
                           <div className="h-2/6 flex items-center justify-center">
-                            <h1 className="text-3xl font-semibold">{result?result.total_ransomware_detected:0}<small>/13</small></h1>
+                            <h1 className="text-3xl font-semibold">{result?result.total_ransomware_detected:0}<small>/{result ?result.total_ransomware_detected_permitted : 0}</small></h1>
                           </div>
                           <div className="h-2/6 flex">
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">MoM Trend</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>5.9%
-                                </h1>
-                              </div>
-                            </div>
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">Efficiency</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>100%
-                                </h1>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       </div>
@@ -431,88 +381,69 @@ const ComponentEndpointProtection = (props) =>{
                             <h1 className="text-xl text-center">Phishing</h1>
                           </div>
                           <div className="h-2/6 flex items-center justify-center">
-                            <h1 className="text-3xl font-semibold">{result? result.total_phishing_detected: 0}<small>/13</small></h1>
+                            <h1 className="text-3xl font-semibold">{result? result.total_phishing_detected: 0}<small>/{result ? result.total_phishing_detected_permitted : 0}</small></h1>
                           </div>
                           <div className="h-2/6 flex">
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">MoM Trend</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>5.9%
-                                </h1>
-                              </div>
-                            </div>
-                            <div className="w-1/2 h-full">
-                              <div className="w-full h-1/2">
-                                <h1 className="font-bold text-sm text-center">Efficiency</h1>
-                              </div>
-                              <div className="w-full h-1/2 flex items-center justify-center">
-                                <h1 className="text-center"><FontAwesomeIcon icon={faCaretUp}
-                                                                             className="text-green-700"/>100%
-                                </h1>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="col-span-4 row-span-6 text-white">
-                  <div
-                    className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
-                    <div className="h-1/6 w-full  border-b-gray-400 border-b-2">
-                      <h1 className="text-2xl flex items-center justify-center">
-                        Threat Indicators <small className="text-sm"></small>
-                      </h1>
-                    </div>
-                    <div className="h-5/6 w-full flex items-center justify-center">
-                      <div className="h-full w-full">
-                        <div className="w-full h-1/2 flex border-b border-b-gray-400">
-                          <div className="h-full w-4/12">
-                            <div className="h-2/6 w-full border-b-gray-200 border-b flex items-center justify-center">
-                              <h1 className="text-center">Overall Efficiency</h1>
-                            </div>
-                            <div className="h-4/6 w-full flex items-center justify-center">
-                              <h1 className="text-5xl">99%</h1>
-                            </div>
-                          </div>
-                          <div className="w-full h-full pl-8">
-                            <ul className="list-disc">
-                              <li>
-                                Overall Efficiency shows the changes from the initial scan to the current scan.
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                        <div className="w-full h-1/2 flex">
-                          <div className="h-full w-4/12">
-                            <div className="h-2/6 w-full border-b-gray-200 border-b flex items-center justify-center">
-                              <h1 className="text-center">MoM Risk Exposure</h1>
-                            </div>
-                            <div className="h-4/6 w-full flex items-center justify-center">
-                              <h1 className="text-5xl">
-                                <small><FontAwesomeIcon icon={faArrowUp} className="text-red-700"/></small>
-                                100%
-                              </h1>
-                            </div>
-                          </div>
-                          <div className="w-full h-full pl-8">
-                            <ul className="list-disc">
-                              <li>
-                                M2M Exposure (Month to Month) shows exposure changes monthly comparing the current scan
-                                to
-                                previous scan.
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/*<div className="col-span-4 row-span-6 text-white">*/}
+                {/*  <div*/}
+                {/*    className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">*/}
+                {/*    <div className="h-1/6 w-full  border-b-gray-400 border-b-2">*/}
+                {/*      <h1 className="text-2xl flex items-center justify-center">*/}
+                {/*        Threat Indicators <small className="text-sm"></small>*/}
+                {/*      </h1>*/}
+                {/*    </div>*/}
+                {/*    <div className="h-5/6 w-full flex items-center justify-center">*/}
+                {/*      <div className="h-full w-full">*/}
+                {/*        <div className="w-full h-1/2 flex border-b border-b-gray-400">*/}
+                {/*          <div className="h-full w-4/12">*/}
+                {/*            <div className="h-2/6 w-full border-b-gray-200 border-b flex items-center justify-center">*/}
+                {/*              <h1 className="text-center">Overall Efficiency</h1>*/}
+                {/*            </div>*/}
+                {/*            <div className="h-4/6 w-full flex items-center justify-center">*/}
+                {/*              <h1 className="text-5xl">99%</h1>*/}
+                {/*            </div>*/}
+                {/*          </div>*/}
+                {/*          <div className="w-full h-full pl-8">*/}
+                {/*            <ul className="list-disc">*/}
+                {/*              <li>*/}
+                {/*                Overall Efficiency shows the changes from the initial scan to the current scan.*/}
+                {/*              </li>*/}
+                {/*            </ul>*/}
+                {/*          </div>*/}
+                {/*        </div>*/}
+                {/*        <div className="w-full h-1/2 flex">*/}
+                {/*          <div className="h-full w-4/12">*/}
+                {/*            <div className="h-2/6 w-full border-b-gray-200 border-b flex items-center justify-center">*/}
+                {/*              <h1 className="text-center">MoM Risk Exposure</h1>*/}
+                {/*            </div>*/}
+                {/*            <div className="h-4/6 w-full flex items-center justify-center">*/}
+                {/*              <h1 className="text-5xl">*/}
+                {/*                <small><FontAwesomeIcon icon={faArrowUp} className="text-red-700"/></small>*/}
+                {/*                100%*/}
+                {/*              </h1>*/}
+                {/*            </div>*/}
+                {/*          </div>*/}
+                {/*          <div className="w-full h-full pl-8">*/}
+                {/*            <ul className="list-disc">*/}
+                {/*              <li>*/}
+                {/*                M2M Exposure (Month to Month) shows exposure changes monthly comparing the current scan*/}
+                {/*                to*/}
+                {/*                previous scan.*/}
+                {/*              </li>*/}
+                {/*            </ul>*/}
+                {/*          </div>*/}
+                {/*        </div>*/}
+                {/*      </div>*/}
+                {/*    </div>*/}
+                {/*  </div>*/}
+                {/*</div>*/}
                 <div className="col-span-4 row-span-6 text-white">
                   <div
                     className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
@@ -523,8 +454,8 @@ const ComponentEndpointProtection = (props) =>{
                     </div>
                     <div className="h-5/6 w-full">
                       <div className="w-full h-full">
-                        <input type="text" name="comments"/>
-                        {/*<Editor editorState={editorState} onChange={setEditorState} userSelect="none" contentEditable={false} />*/}
+                        <div className="w-full h-full" id="quillEditor"></div>
+                        {/*<input type="text" name="comments"/>*/}
                         {/*<ul className="list-disc p-5">*/}
                         {/*  <li>We have observed an upward trend on the total log ingestion.</li>*/}
                         {/*  <li>We observed the use of attack type “Apache OFBiz Authentication Bypass (CVE-2023-51467)”*/}

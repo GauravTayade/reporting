@@ -22,14 +22,6 @@ const Home= ()=>{
         <div className="row-span-11 col-span-12">
           <div className="w-full h-full overflow-y-scroll no-scrollbar">
             <userContext.Provider value={userDataContext}>
-              {/*<ComponentDataSource/>*/}
-              {/*<ComponentDataManifest/>*/}
-              {/*<ComponentAnalyzingGateway/>*/}
-              {/*<ComponentGlobalTrafficAnalysis/>*/}
-              {/*<ComponentTopNetworkStats/>*/}
-              {/*<ComponentAnalyzingServer/>*/}
-              {/*<ComponentEndpointProtection/>*/}
-              {/*<ComponentAdvisoryWatchDog/>*/}
               <Login/>
             </userContext.Provider>
           </div>
