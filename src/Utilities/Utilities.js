@@ -1,4 +1,4 @@
-export const formatNumber = function(value) {
+export const formatNumber = (value)=> {
   return new Intl.NumberFormat('en', {
     notation: 'compact',
     minimumFractionDigits:process.env.NEXT_PUBLIC_MINIMUM_FRACTION_DIGITS,
@@ -13,7 +13,7 @@ export const formatNumberPercentage = (value)=>{
   }).format(value)
 }
 
-export const getNewDateRange= function (startdate, enddate){
+export const getNewDateRange= (startdate, enddate) =>{
 
   let newStartDate = 0
   let newEndDate = 0
@@ -40,7 +40,7 @@ export const getPercentage = (partialValue, totalValue) =>{
 }
 
 export const getPercentageDifference = async(currentLogs , previouslogs) =>{
-  if (previouslogs === 0 && currentLogs ===0){
+  if (parseInt(previouslogs) === 0 && parseInt(currentLogs) === 0){
     return 0
   }else if(previouslogs <= 0){
     return 100
@@ -120,4 +120,30 @@ export const chartBackgroundColorsListOpacity40 = [
   'rgb(232,158,111,0.4)',
   'rgb(217,93,99,0.4)',
   'rgb(148,78,62,0.4)'
+]
+
+export const chartBackgroundColorsListOpacity60 = [
+  'rgb(205,134,202,0.6)',
+  'rgb(151,124,233,0.6)',
+  'rgb(112,118,231,0.6)',
+  'rgb(94,154,218,0.6)',
+  'rgb(62,84,149,0.6)',
+  'rgb(169,204,133,0.6)',
+  'rgb(232,198,123,0.6)',
+  'rgb(232,158,111,0.6)',
+  'rgb(217,93,99,0.6)',
+  'rgb(148,78,62,0.6)'
+]
+
+export const chartBackgroundColorsListOpacity80 = [
+  'rgb(205,134,202,0.8)',
+  'rgb(151,124,233,0.8)',
+  'rgb(112,118,231,0.8)',
+  'rgb(94,154,218,0.8)',
+  'rgb(62,84,149,0.8)',
+  'rgb(169,204,133,0.8)',
+  'rgb(232,198,123,0.8)',
+  'rgb(232,158,111,0.8)',
+  'rgb(217,93,99,0.8)',
+  'rgb(148,78,62,0.8)'
 ]

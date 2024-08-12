@@ -17,7 +17,7 @@ const Home= ()=>{
   const userDataContext = useContext(userContext)
 
   return(
-    <div className="w-screen h-screen bg-gradient-to-bl from-blue-900 to-teal-900">
+    <div className="w-screen h-screen bg-blue-900">
       <div className=" w-full h-full grid grid-rows-12 grid-cols-12">
         <div className="row-span-11 col-span-12">
           <div className="w-full h-full overflow-y-scroll no-scrollbar">

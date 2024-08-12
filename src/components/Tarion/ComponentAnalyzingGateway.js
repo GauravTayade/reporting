@@ -1,6 +1,6 @@
 import ComponentPieChart from "@/components/charts/ComponentPieChart";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faCaretUp,faCaretDown} from "@fortawesome/free-solid-svg-icons";
+import {faCaretUp, faCaretDown, faTrashCan} from "@fortawesome/free-solid-svg-icons";
 import {useContext, useEffect, useState} from "react";
 import axios from "axios";
 import userContext from "@/context/userContext";
@@ -10,18 +10,21 @@ import {
   chartBackgroundColorsListOpacity40,
   formatNumber,
   getPercentageDifference,
-  getNewDateRange
+  getNewDateRange, getAverageLogsPerDay, getAverageLogsPerMinuts
 } from '@/Utilities/Utilities'
+import Swal from "sweetalert2";
 
 const ComponentAnalyzingGateway = (props) => {
 
-  //get user context data
+
   //get user context data
   const userDataContext = useContext(userContext)
   //get userContext data to get customerId
   const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
   const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
   const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
+  const employeeId = userDataContext.employeeId ? userDataContext.employeeId : 0
+  const reportId = userDataContext.reportId ? userDataContext.reportId : 0
 
   //useState variables to store state data
   const [result, setResult] = useState({})
@@ -31,9 +34,11 @@ const ComponentAnalyzingGateway = (props) => {
   const [pieExternalThreatsCount, setPieExternalThreatsCount] = useState()
   const [ipsHitsAnalysis, setIPsHitsAnalysis] = useState([])
 
-  const [analyzingGatewayData, setAnalyzingGatewayData] = useState({
+  const initialValues = {
     total_firewall_subscription_count:0,
     total_firewall_log_ingestion_count:0,
+    total_firewall_log_ingestion_count_per_day:0,
+    total_firewall_log_ingestion_count_per_minute:0,
     total_firewall_log_ingestion_count_diff_percentage:0,
     total_firewall_log_allowed_count:0,
     total_firewall_log_allowed_count_dff_percentage:0,
@@ -45,7 +50,13 @@ const ComponentAnalyzingGateway = (props) => {
     total_firewall_log_admin_activities_count_diff_percentage:0,
     total_firewall_active_blade_count:0,
     total_firewall_external_threat_data:0
-  })
+  }
+
+  const [analyzingGatewayData, setAnalyzingGatewayData] = useState(initialValues)
+
+  const [gatewayRecommendation, setGatewayRecommendation] = useState()
+  const [gatewayRecommendationList, setGatewayRecommendationList] = useState([])
+  const [isEditable, setIsEditable] = useState(true)
 
   //initial values of variables
   let data = {
@@ -56,6 +67,83 @@ const ComponentAnalyzingGateway = (props) => {
     top_external_threats_count: [],
     top_ips_hits_analysis: [],
     top_external_threats_data:[]
+  }
+
+  const getGatewayRecommendation =async ()=>{
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
+      params:{
+        crId:reportId,
+        category:'gateway'
+      }
+    })
+      .then(response=>{
+        if(response.data.length > 0){
+          response.data.map(comment=>{
+            let temp = gatewayRecommendationList
+            temp.push({
+              'comment': comment.comment,
+              'category': comment.category,
+              'crId': comment.cr_id,
+              'employeeId': comment.employee_id
+            })
+            setGatewayRecommendationList(temp)
+          })
+        }
+      })
+      .catch(error=>{
+        console.log(error)
+      })
+  }
+
+  const handleSaveGatewayRecommendation = () => {
+
+    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/saveRecommendation", {
+      gatewayRecommendation: gatewayRecommendationList
+    })
+      .then(response => {
+        if (response.data.output === false) {
+          Swal.fire({
+            title: "Error",
+            text: "Something went wrong while savin comment",
+            icon: "error"
+          })
+        } else {
+          Swal.fire({
+            title: "Success",
+            text: "Your Comments has been saved successfully",
+            icon: "success"
+          })
+          setIsEditable(!isEditable)
+        }
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  }
+
+  const handleEditGatewayRecommendation = () => {
+    setIsEditable(!isEditable)
+  }
+
+  const handleGatewayRecommendation = (e) => {
+    setGatewayRecommendation(e.target.value)
+  }
+
+  const addGatewayRecommendation = () => {
+
+    let temp = gatewayRecommendationList
+    temp.push({
+      'comment': gatewayRecommendation,
+      'category': 'gateway',
+      'crId': reportId,
+      'employeeId': employeeId
+    })
+    setGatewayRecommendationList(temp)
+    setGatewayRecommendation('')
+  }
+
+  const handleGatewayRecommendationRemove = (indexRemove) => {
+    setGatewayRecommendationList(gatewayRecommendationList.filter((recommendation, index) => index !== indexRemove))
   }
 
   const getFirewallSubscriptionCount = async () => {
@@ -82,6 +170,14 @@ const ComponentAnalyzingGateway = (props) => {
     })
       .then(async response => {
         setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count:response.data[0].logcount}})
+
+        getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count_per_day:result}})
+        })
+
+        getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count_per_minute: result}})
+        })
 
         //calculate new date range based on current date range difference.
         const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
@@ -417,7 +513,8 @@ const ComponentAnalyzingGateway = (props) => {
       getFirewallAdminActivitiesLogIngestion(),
       getFirewallActiveBlades(),
       getTopExternalThreat(),
-      getIPSHitsAnalysis()
+      getIPSHitsAnalysis(),
+      getGatewayRecommendation()
     ]).then(() => {
       setResult(data)
     })
@@ -456,16 +553,16 @@ const ComponentAnalyzingGateway = (props) => {
                     <h2 className="text-xl text-white"><b>Firewall</b> Subscriptions</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                    </div>
-                    <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
+                    <div className="w-1/2 h-full flex items-center justify-center pr-1">
+                      <div className="h-full w-full flex items-center justify-center px-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-lg text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count_per_day)} <span className="text-sm"> logs/d</span></h1>
                       </div>
-                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                    </div>
+                    <div className="w-1/2 h-full flex items-center justify-center pl-1">
+                      <div className="h-full w-full flex items-center justify-center px-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-lg text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count_per_minute)} <span className="text-sm"> logs/m</span></h1>
                       </div>
                     </div>
                   </div>
@@ -495,13 +592,16 @@ const ComponentAnalyzingGateway = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage ?
-                        analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage ? analyzingGatewayData.total_firewall_log_ingestion_count_diff_percentage : 0} %</h1>
@@ -526,13 +626,16 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage ?
-                        analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage ? analyzingGatewayData.total_firewall_log_allowed_count_dff_percentage : 0} %</h1>
@@ -557,13 +660,16 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingGatewayData.total_firewall_log_denied_count_diff_percentage ?
-                        analyzingGatewayData.total_firewall_log_denied_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_denied_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingGatewayData.total_firewall_log_denied_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingGatewayData.total_firewall_log_denied_count_diff_percentage ? analyzingGatewayData.total_firewall_log_denied_count_diff_percentage : 0} %</h1>
@@ -588,13 +694,16 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage ?
-                        analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage ? analyzingGatewayData.total_firewall_log_IPS_count_diff_percentage : 0} %</h1>
@@ -619,13 +728,16 @@ const ComponentAnalyzingGateway = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage ?
-                        analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage >= 0 ?
+                      {analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage ? analyzingGatewayData.total_firewall_log_admin_activities_count_diff_percentage : 0} %</h1>
@@ -734,29 +846,84 @@ const ComponentAnalyzingGateway = (props) => {
                   </div>
                 </div>
               </div>
-              <div className="col-span-4 row-span-6">
+              <div className="col-span-4 row-span-6 text-white">
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
-                  <div className="h-1/6 w-full border-b-gray-400 border-b-2">
-                    <h1 className="text-white text-2xl flex items-center justify-center">
-                      Security Overview Remarks
-                    </h1>
+                  <div className="h-1/12 w-full border-b-gray-400 border-b-2 flex">
+                    {isEditable ?
+                      <>
+                        <div className="w-11/12 h-full flex items-center justify-center">
+                          <h1 className="text-2xl flex items-center justify-center text-white">
+                            Security Overview Remarks
+                          </h1>
+                        </div>
+                        <div className="w-1/12 h-full flex items-center justify-center p-2">
+                          <button className="bg-green-700 px-2 py-1 rounded-lg"
+                                  onClick={handleSaveGatewayRecommendation}>Save
+                          </button>
+                        </div>
+                      </>
+                      :
+                      <>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <h1 className="text-2xl flex items-center justify-center">
+                            A2N Recommendations
+                          </h1>
+                        </div>
+                        <div className="w-1/12 h-full flex items-center justify-center p-2">
+                          <button className="bg-green-700 px-2 py-1 rounded-lg"
+                                  onClick={handleEditGatewayRecommendation}>Edit
+                          </button>
+                        </div>
+                      </>
+                    }
                   </div>
                   <div className="h-5/6 w-full">
                     <div className="w-full h-full">
-                      <ul className="list-disc p-5 text-white">
-                        <li>We have observed an upward trend on the total log ingestion.</li>
-                        <li>We observed the use of attack type “Apache OFBiz Authentication Bypass (CVE-2023-51467)” is
-                          in a rise.
-                        </li>
-                        <li>General recommendation will be to upgrade Apache OFBiz software to version 18.12.11, If it
-                          exists on your network and if not done already.
-                        </li>
-                        <li>We recommend blocking these exploits on IPS if it is not required for operational
-                          purposes.
-                        </li>
-                        <li>A2N recommends to block all the malicious IP.</li>
-                      </ul>
+                      {isEditable ?
+                        <div className="w-full h-1/6 flex items-center justify-center">
+                          <div className="w-9/12 h-12 px-4 flex items-center justify-center">
+                            <input type="text"
+                                   value={gatewayRecommendation}
+                                   className="w-full px-2 text-gray-800 rounded-lg"
+                                   name="endpointProtectionRecommendation"
+                                   onChange={handleGatewayRecommendation}/>
+                          </div>
+                          <div className="w-3/12 h-12 flex items-center justify-center px-5">
+                            <input value="Add" type="button"
+                                   className="bg-green-700 rounded-lg w-10/12 py-1 shadow-lg"
+                                   onClick={addGatewayRecommendation}/>
+                          </div>
+                        </div>
+                        :
+                        ''
+                      }
+                      <div className="w-full h-5/6 flex items-center justify-center">
+                        <div className="w-11/12 h-5/6">
+                          <ul className="list-disc">
+                            {
+                              gatewayRecommendationList.length > 0 ?
+                                gatewayRecommendationList.map((recommendation, index) => {
+                                  return <div className="flex py-1" key={index}>
+                                    <li className="w-11/12">{recommendation.comment}</li>
+                                    {isEditable ?
+                                      <div className="w-1/12 flex items-center justify-center">
+                                        <button onClick={() => handleGatewayRecommendationRemove(index)}
+                                                className="py-1 px-2 bg-white/10">
+                                          <FontAwesomeIcon className="text-red-700" icon={faTrashCan}/>
+                                        </button>
+                                      </div>
+                                      :
+                                      ''
+                                    }
+                                  </div>
+                                })
+                                :
+                                ''
+                            }
+                          </ul>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

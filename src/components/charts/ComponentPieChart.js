@@ -7,6 +7,7 @@ const options= {
   responsive:true,
   plugins:{
     legend:{
+      display:false,
       labels:{
         color:'#fff'
       },
@@ -23,6 +24,7 @@ const backgroundColorList =  [
 ]
 
 export default function ComponentPieChart(props){
+
 
   const data =  {
     labels: props.labels? props.labels :'',

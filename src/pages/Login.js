@@ -1,5 +1,7 @@
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
+import UserContext from "@/context/userContext";
+import {useContext} from "react";
 
 const Login = (props) => {
 
@@ -9,6 +11,8 @@ const Login = (props) => {
     username:null,
     password:null
   })
+
+  const userDataContext = useContext(UserContext);
 
   const [errorMessage,setErrorMessage] = useState({message:''})
 
@@ -20,6 +24,8 @@ const Login = (props) => {
     e.preventDefault()
     if (userObject.username !== undefined && userObject.password !== undefined) {
       if (userObject.username === process.env.NEXT_PUBLIC_ADMIN_USERNAME && userObject.password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+        userDataContext.isLoggedIn = true;
+        userDataContext.username = userObject.username
         router.push("/Dashboard")
       } else {
         setErrorMessage({message: "Invalid username or password"})
@@ -29,6 +35,7 @@ const Login = (props) => {
 
   useEffect(() => {
     console.log("next js app is working")
+    console.log("userContext from login page",userDataContext)
   }, []);
 
   return(

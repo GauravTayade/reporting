@@ -366,10 +366,11 @@ const ComponentDataSource = (props) => {
               total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data.length)
             }
           })
+
           setDatasourceData(prevState => {
             return {
               ...prevState,
-              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].evacount) + parseInt(response.data[0].ivacount)
+              total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data.length > 0 ? response.data[0].evacount : 0) + parseInt(response.data.length >0 ? response.data[0].ivacount:0)
             }
           })
         }
@@ -489,7 +490,6 @@ const ComponentDataSource = (props) => {
         })
 
         await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
-          console.log(result)
           setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_minute: result}})
         })
 
@@ -641,13 +641,16 @@ const ComponentDataSource = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {totalDeviceDiffPercentage ?
-                        totalDeviceDiffPercentage >= 0 ?
+                      {totalDeviceDiffPercentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        totalDeviceDiffPercentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{totalDeviceDiffPercentage ? totalDeviceDiffPercentage : 0} %</h1>
@@ -673,13 +676,16 @@ const ComponentDataSource = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {totalDeviceLogCountDiffPercentage ?
-                        totalDeviceLogCountDiffPercentage >= 0 ?
+                      {totalDeviceLogCountDiffPercentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        totalDeviceLogCountDiffPercentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{totalDeviceLogCountDiffPercentage ? totalDeviceLogCountDiffPercentage : 0} %</h1>
@@ -702,16 +708,16 @@ const ComponentDataSource = (props) => {
                     <h2 className="text-xl text-white"><b>Firewall</b> Log Ingestion Percentage</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                    </div>
-                    <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                    <div className="w-1/2 h-full flex items-center justify-center pr-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_day)} logs/d</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_day)} <span className="text-sm"> logs/d</span></h1>
                       </div>
-                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} logs/m</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span></h1>
                       </div>
                     </div>
                   </div>
@@ -732,16 +738,18 @@ const ComponentDataSource = (props) => {
                     <h2 className="text-xl text-white"><b>Server</b> Log Ingestion Percentage</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                    </div>
-                    <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                    <div className="w-1/2 h-full flex items-center justify-center pr-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_day)} logs/d</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_day)} <span className="text-sm"> logs/d</span>
+                        </h1>
                       </div>
-                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                    </div>
+                    <div className="w-1/2 h-full flex items-center justify-center pl-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} logs/m</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span>
+                        </h1>
                       </div>
                     </div>
                   </div>
@@ -762,16 +770,20 @@ const ComponentDataSource = (props) => {
                     <h2 className="text-xl text-white"><b>EDR</b> Log Ingestion Percentage</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                    </div>
-                    <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                    <div className="w-1/2 h-full flex items-center justify-center pr-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_day)} logs/d</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_day)}
+                          <span className="text-sm"> logs/d</span>
+                        </h1>
                       </div>
-                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)} logs/m</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)}
+                          <span className="text-sm"> logs/m</span>
+                        </h1>
                       </div>
                     </div>
                   </div>
@@ -792,16 +804,20 @@ const ComponentDataSource = (props) => {
                     <h2 className="text-xl text-white"><b>NAC</b> Log Ingestion Percentage</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                    </div>
-                    <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b border-b-white flex items-center justify-end px-2">
+                    <div className="w-1/2 h-full flex items-center justify-center pr-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_day)} logs/d</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_day)}
+                          <span className="text-sm"> logs/d</span>
+                        </h1>
                       </div>
-                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                    </div>
+                    <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)} logs/m</h1>
+                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)}
+                          <span className="text-sm"> logs/m</span>
+                        </h1>
                       </div>
                     </div>
                   </div>

@@ -128,7 +128,14 @@ const ComponentNetworkStats = () =>{
           </div>
           <div className="h-full w-10/12">
             <div className="w-full h-full flex items-center justify-center">
-              <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 border-b-2 uppercase">Network Stats</h1>
+              <div className="w-full h-2/3 flex-col">
+                <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
+                  Network States
+                </h1>
+                <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
+                  {reportStartDate} - {reportEndDate}
+                </h2>
+              </div>
             </div>
           </div>
         </div>

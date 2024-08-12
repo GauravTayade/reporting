@@ -1,21 +1,33 @@
 import ComponentPieChart from "@/components/charts/ComponentPieChart";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faCaretDown, faCaretUp} from "@fortawesome/free-solid-svg-icons";
+import {faCaretDown, faCaretUp, faTrashCan} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import {useContext, useEffect, useState} from "react";
 import userContext from "@/context/userContext";
 import {
   chartBackgroundColorsList,
   chartBackgroundColorsListOpacity40,
-  formatNumber, getNewDateRange, getPercentageDifference
+  chartBackgroundColorsListOpacity60,
+  formatNumber, getAverageLogsPerDay, getAverageLogsPerMinuts, getNewDateRange, getPercentageDifference
 } from "@/Utilities/Utilities"
+import Swal from "sweetalert2";
 
 const ComponentAnalyzingServer = (props) => {
 
-  const [result, setResult] = useState({})
+  //get user context data
+  const userDataContext = useContext(userContext)
+  //get userContext data to get customerId
+  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
+  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
+  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
+  const employeeId = userDataContext.employeeId ? userDataContext.employeeId : 0
+  const reportId = userDataContext.reportId ? userDataContext.reportId : 0
+
   const [analyzingServer, setAnalyzingServer] = useState({
     total_server_subscription_count:0,
     total_server_log_ingestion_count: 0,
+    total_server_log_ingestion_count_per_day:0,
+    total_server_log_ingestion_count_per_minute:0,
     total_server_authentication_count:0,
     total_server_authentication_count_diff_percentage:0,
     total_server_failed_authentication_count:0,
@@ -35,23 +47,19 @@ const ComponentAnalyzingServer = (props) => {
     total_server_unique_username_count:0,
     total_server_unique_username_count_diff_percentage:0
   })
+
   const [pieMostActiveServers, setPieMostActiveServers] = useState()
   const [pieMostActiveServersRecordCount, setPieMostActiveServersRecordCount] = useState()
-  const [totalUniqueHosts, setTotalUniqueHosts] = useState()
-  const [totalUniqueHostsDiffPercentage,setTotalUniqueHostsDiffPercentage] = useState(0)
-  const [totalUniqueUsernames, setTotalUniqueUsernames] = useState()
-  const [totalUniqueUsernamesDiffPercentage,setTotalUniqueUsernamesDiffPercentage] = useState(0)
 
   //get the top target hosts with failed auth
   const [pieTopTargetHosts, setPieTopTargetHosts] = useState()
   const [pieTopTargetHostsRecordCount, setPieTopTargetHostsRecordCount] = useState()
 
-  //get user context data
-  const userDataContext = useContext(userContext)
-  //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
+  const [serverRecommendation, setServerRecommendation] = useState()
+  const [serverRecommendationList, setServerRecommendationList] = useState([])
+  const [isEditable, setIsEditable] = useState(true)
+
+
 
   let data = {
     total_subscriptions_count: 0,   //find-endpoint-count-total
@@ -67,6 +75,84 @@ const ComponentAnalyzingServer = (props) => {
     most_active_servers: 0, //find-most-active-server
     top_target_hosts: 0, //find-top-failed-authentication-target-hosts
   }
+
+  const getServerRecommendation =async ()=>{
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
+      params:{
+        crId:reportId,
+        category:'server'
+      }
+    })
+      .then(response=>{
+        if(response.data.length > 0){
+          response.data.map(comment=>{
+            let temp = serverRecommendationList
+            temp.push({
+              'comment': comment.comment,
+              'category': comment.category,
+              'crId': comment.cr_id,
+              'employeeId': comment.employee_id
+            })
+            setServerRecommendationList(temp)
+          })
+        }
+      })
+      .catch(error=>{
+        console.log(error)
+      })
+  }
+
+  const handleSaveServerRecommendation = () => {
+    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/saveRecommendation", {
+      endpointRecommendations: serverRecommendationList
+    })
+      .then(response => {
+        if (response.data.output === false) {
+          Swal.fire({
+            title: "Error",
+            text: "Something went wrong while savin comment",
+            icon: "error"
+          })
+        } else {
+          Swal.fire({
+            title: "Success",
+            text: "Your Comments has been saved successfully",
+            icon: "success"
+          })
+          setIsEditable(!isEditable)
+        }
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  }
+
+  const handleEditServerRecommendation = () => {
+    setIsEditable(!isEditable)
+  }
+
+  const handleServerRecommendation = (e) => {
+    setServerRecommendation(e.target.value)
+  }
+
+  const addServerRecommendation = () => {
+
+    let temp = serverRecommendationList
+    temp.push({
+      'comment': serverRecommendation,
+      'category': 'server',
+      'crId': reportId,
+      'employeeId': employeeId
+    })
+    setServerRecommendationList(temp)
+    setServerRecommendation('')
+  }
+
+  const handleServerRecommendationRemove = (indexRemove) => {
+    setServerRecommendationList(serverRecommendationList.filter((recommendation, index) => index !== indexRemove))
+  }
+
+
 
   const getUniqueServerCount = async () => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
@@ -84,13 +170,21 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  //get total log ingested by servers
   const getServerTotalLogIngestionCount = async () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalLogCount",{
       params:{customerId: customerId,startDate:reportStartDate,endDate:reportEndDate}
     })
       .then(response=>{
         setAnalyzingServer(prevState => {return{...prevState,total_server_log_ingestion_count: response.data[0].logcount}})
+
+        getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setAnalyzingServer(prevState => {return{...prevState,total_server_log_ingestion_count_per_day:result}})
+        })
+
+        getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+          setAnalyzingServer(prevState => {return{...prevState,total_server_log_ingestion_count_per_minute:result}})
+        })
+
       })
       .catch(error=>{
         console.log(error)
@@ -428,7 +522,6 @@ const ComponentAnalyzingServer = (props) => {
       .catch(error => {
         console.log(error)
       })
-    console.log('rere',analyzingServer)
   }
 
   const getUniqueTotalTargetUsernames = async () => {
@@ -477,10 +570,9 @@ const ComponentAnalyzingServer = (props) => {
       getTopTargetHosts(),
       getUniqueTotalTargetHosts(),
       getUniqueTotalTargetUsernames(),
-
+      getServerRecommendation()
     ]).then(() => {
-      // console.log(data)
-      // setResult(data)
+
     })
   }, [])
 
@@ -519,16 +611,16 @@ const ComponentAnalyzingServer = (props) => {
                     <h2 className="text-xl text-white"><b>SERVER</b> Subscriptions</h2>
                   </div>
                   <div className="w-full h-1/2 flex items-center">
-                    <div className="w-1/2 h-full flex items-center justify-center">
-                    </div>
-                    <div className="w-1/2 h-full flex-col items-center justify-center">
-                      <div className="h-1/2 w-full border-b-2 border-b-white flex items-center justify-end px-2">
+                    <div className="w-1/2 h-full flex items-center justify-center pr-1">
+                      <div className="h-full w-full flex items-center justify-center px-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count / 30)} logs/d</h1>
+                          className="text-lg text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count_per_day)} <span className="text-sm">logs/d</span></h1>
                       </div>
-                      <div className="h-1/2 w-full flex items-center justify-end px-2">
+                    </div>
+                    <div className="w-1/2 h-full flex items-center justify-center pl-1">
+                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
                         <h1
-                          className="text-sm text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count / 43200)} logs/m</h1>
+                          className="text-lg text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count_per_minute)} <span className="text-sm">logs/m</span></h1>
                       </div>
                     </div>
                   </div>
@@ -558,13 +650,16 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_authentication_count_diff_percentage ?
-                        analyzingServer.total_server_authentication_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_authentication_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingServer.total_server_authentication_count_diff_percentage >0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingServer.total_server_authentication_count_diff_percentage ? analyzingServer.total_server_authentication_count_diff_percentage : 0} %</h1>
@@ -590,16 +685,24 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_registry_changes_count_diff_percentage ?
-                        analyzingServer.total_server_registry_changes_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_registry_changes_count_diff_percentage === 0 ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                          </>
+                        :
+                        analyzingServer.total_server_registry_changes_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
-                      <h1
-                        className="text-lg text-white">{analyzingServer.total_server_registry_changes_count_diff_percentage ? analyzingServer.total_server_registry_changes_count_diff_percentage : 0} %</h1>
+                      <h1 className="text-lg text-white">
+                        {analyzingServer.total_server_registry_changes_count_diff_percentage?
+                          analyzingServer.total_server_registry_changes_count_diff_percentage
+                          :
+                          0
+                        } %
+                      </h1>
                     </div>
                   </div>
                 </div>
@@ -622,13 +725,16 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_service_creation_count_diff_percentage ?
-                        analyzingServer.total_server_service_creation_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_service_creation_count_diff_percentage === 0?
+                        <>
+                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingServer.total_server_service_creation_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingServer.total_server_service_creation_count_diff_percentage ? analyzingServer.total_server_service_creation_count_diff_percentage : 0} %</h1>
@@ -653,16 +759,24 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_process_creation_count_diff_percentage ?
-                        analyzingServer.total_server_process_creation_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_process_creation_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingServer.total_server_process_creation_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
-                      <h1
-                        className="text-lg text-white">{analyzingServer.total_server_process_creation_count_diff_percentage ? analyzingServer.total_server_process_creation_count_diff_percentage : 0} %</h1>
+                      <h1 className="text-lg text-white">
+                        {
+                          analyzingServer.total_server_process_creation_count_diff_percentage ?
+                            analyzingServer.total_server_process_creation_count_diff_percentage
+                            :
+                            0
+                        } %</h1>
                     </div>
                   </div>
                 </div>
@@ -685,13 +799,16 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_policy_changes_count_diff_percentage ?
-                        analyzingServer.total_server_policy_changes_count_diff_percentage >= 0 ?
-                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                      {analyzingServer.total_server_policy_changes_count_diff_percentage  === 0  ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                          </>
                           :
-                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
+                          analyzingServer.total_server_policy_changes_count_diff_percentage > 0 ?
+                            <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                            :
+                            <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
                       }
                       <h1
                         className="text-lg text-white">{analyzingServer.total_server_policy_changes_count_diff_percentage ? analyzingServer.total_server_policy_changes_count_diff_percentage : 0} %</h1>
@@ -716,13 +833,16 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_file_creation_count_diff_percentage ?
-                        analyzingServer.total_server_file_creation_count_diff_percentage >= 0 ?
+                      {analyzingServer.total_server_file_creation_count_diff_percentage === 0 ?
+                        <>
+                          <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
+                          <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
+                        </>
+                        :
+                        analyzingServer.total_server_file_creation_count_diff_percentage > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
-                        :
-                        ''
                       }
                       <h1
                         className="text-lg text-white">{analyzingServer.total_server_file_creation_count_diff_percentage ? analyzingServer.total_server_file_creation_count_diff_percentage : 0} %</h1>
@@ -740,7 +860,7 @@ const ComponentAnalyzingServer = (props) => {
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
                   <div className="h-1/6 w-full">
-                    <h1 className="text-white text-3xl flex items-center justify-center">
+                    <h1 className="text-white text-3xl flex items-center justify-center border-b">
                       Most Active Servers
                     </h1>
                   </div>
@@ -751,9 +871,11 @@ const ComponentAnalyzingServer = (props) => {
                           return (
                             <div key={index} className="w-full h-10 p-1">
                               <div
-                                className="w-full h-full  flex items-center justify-center rounded-lg"
-                                style={{backgroundColor: chartBackgroundColorsListOpacity40[index]}}>
+                                className="w-full h-full flex items-center justify-center rounded-lg"
+                                style={{backgroundColor: chartBackgroundColorsListOpacity60[index]}}>
                                 <h1 className="text-white text-center font-semibold text-lg">{server}</h1>
+                                &nbsp;
+                                <span>({formatNumber(pieMostActiveServersRecordCount[index])})</span>
                               </div>
                             </div>
                           )
@@ -773,13 +895,34 @@ const ComponentAnalyzingServer = (props) => {
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
                   <div className="h-1/6 w-full">
-                    <h1 className="text-white text-3xl flex items-center justify-center">
+                    <h1 className="text-white text-3xl flex items-center justify-center border-b">
                       Top Target Hosts
                     </h1>
                   </div>
                   <div className="h-5/6 w-full flex items-center justify-center">
-                    <ComponentPieChart backGroundColors={chartBackgroundColorsList}
-                                       logdata={pieTopTargetHostsRecordCount} labels={pieTopTargetHosts}/>
+                    <div className="w-2/6 h-full">
+                      {pieTopTargetHosts ?
+                        pieTopTargetHosts.map((server, index) => {
+                          return (
+                            <div key={index} className="w-full h-10 p-1">
+                              <div
+                                className="w-full h-full  flex items-center justify-center rounded-lg"
+                                style={{backgroundColor: chartBackgroundColorsListOpacity60[index]}}>
+                                <h1 className="text-white text-center font-semibold text-lg">{server}</h1>
+                                &nbsp;
+                                <span> ({formatNumber(pieTopTargetHostsRecordCount[index])})</span>
+                              </div>
+                            </div>
+                          )
+                        })
+                        :
+                        'NO data'
+                      }
+                    </div>
+                    <div className="w-4/6 h-full flex items-center justify-center">
+                      <ComponentPieChart backGroundColors={chartBackgroundColorsList}
+                                         logdata={pieTopTargetHostsRecordCount} labels={pieTopTargetHosts}/>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -787,115 +930,131 @@ const ComponentAnalyzingServer = (props) => {
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
                   <div className="h-1/6 w-full">
-                    <h1 className="text-white text-2xl flex items-center justify-center">
+                    <h1 className="text-white text-2xl flex items-center justify-center border-b">
                       Authentication Analysis <small className="text-sm"></small>
                     </h1>
                   </div>
                   <div className="h-5/6 w-full flex items-center justify-center">
                     <div className="w-full h-full grid grid-rows-5 grid-cols-10 items-center justify-center gap-1">
                       <div
-                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         Total Authentications
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         {formatNumber(analyzingServer.total_server_authentication_count)}
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {analyzingServer.total_server_authentication_count_diff_percentage ?
-                          analyzingServer.total_server_authentication_count_diff_percentage >= 0 ?
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
+                        {analyzingServer.total_server_authentication_count_diff_percentage === 0 ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
+                          </>
+                          :
+                          analyzingServer.total_server_authentication_count_diff_percentage > 0 ?
                             <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
-                          :
-                          ''
                         }
                         <h1
                           className="text-white">{analyzingServer.total_server_authentication_count_diff_percentage ? analyzingServer.total_server_authentication_count_diff_percentage : 0} %</h1>
                       </div>
 
                       <div
-                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         Total Failed Authentication
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         {
                           formatNumber(analyzingServer.total_server_failed_authentication_count)
                         }
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?
-                          analyzingServer.total_server_failed_authentication_count_diff_percentage >=0 ?
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage === 0 ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
+                          </>
+                          :
+                          analyzingServer.total_server_failed_authentication_count_diff_percentage >0 ?
                             <FontAwesomeIcon className="text-2xl text-green-700" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-2xl text-red-700" icon={faCaretDown}/>
-                          :
-                          0
                         }
-                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?  analyzingServer.total_server_failed_authentication_count_diff_percentage: 0}
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?  analyzingServer.total_server_failed_authentication_count_diff_percentage: 0} %
                       </div>
 
                       <div
-                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         Failure Percentage
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         {formatNumber((analyzingServer.total_server_failed_authentication_count * 100) / analyzingServer.total_server_authentication_count)} %
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?
-                          analyzingServer.total_server_failed_authentication_count_diff_percentage >=0 ?
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage === 0 ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
+                          </>
+                          :
+                          analyzingServer.total_server_failed_authentication_count_diff_percentage >0 ?
                             <FontAwesomeIcon className="text-2xl text-green-700" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-2xl text-red-700" icon={faCaretDown}/>
-                          :
-                          0
                         }
-                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?  analyzingServer.total_server_failed_authentication_count_diff_percentage: 0}
+                        {analyzingServer.total_server_failed_authentication_count_diff_percentage ?  analyzingServer.total_server_failed_authentication_count_diff_percentage: 0} %
                       </div>
 
                       <div
-                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         # of Total Hosts
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">{analyzingServer.total_server_unique_hosts_count}
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">{analyzingServer.total_server_unique_hosts_count}
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {analyzingServer.total_server_unique_hosts_count_diff_percentage ?
-                          analyzingServer.total_server_unique_hosts_count_diff_percentage >= 0 ?
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
+                        {analyzingServer.total_server_unique_hosts_count_diff_percentage === 0 ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
+                          </>
+                          :
+                          analyzingServer.total_server_unique_hosts_count_diff_percentage > 0 ?
                             <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
-                          :
-                          ''
+
                         }
                         <h1
                           className="text-white">{analyzingServer.total_server_unique_hosts_count_diff_percentage ? analyzingServer.total_server_unique_hosts_count_diff_percentage : 0} %</h1>
                       </div>
 
                       <div
-                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
+                        className="col-span-6 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
                         # of Total Usernames
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">{analyzingServer.total_server_unique_username_count}
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">{analyzingServer.total_server_unique_username_count}
                       </div>
                       <div
-                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-gray-400">
-                        {analyzingServer.total_server_unique_username_count_diff_percentage ?
-                          analyzingServer.total_server_unique_username_count_diff_percentage >= 0 ?
+                        className="col-span-2 bg-opacity-65 w-full h-full flex items-center justify-center rounded-lg bg-white/10">
+                        {analyzingServer.total_server_unique_username_count_diff_percentage === 0 ?
+                          <>
+                            <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
+                            <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
+                          </>
+                          :
+                          analyzingServer.total_server_unique_username_count_diff_percentage > 0 ?
                             <FontAwesomeIcon className="text-green-700 text-2xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-2xl" icon={faCaretDown}/>
-                          :
-                          ''
                         }
                         <h1
                           className="text-white">{analyzingServer.total_server_unique_username_count_diff_percentage ? analyzingServer.total_server_unique_username_count_diff_percentage : 0} %</h1>
@@ -907,26 +1066,80 @@ const ComponentAnalyzingServer = (props) => {
               <div className="col-span-4 row-span-6">
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
-                  <div className="h-1/6 w-full border-b-gray-400 border-b-2">
-                    <h1 className="text-white text-2xl flex items-center justify-center">
-                      Security Overview Remarks
-                    </h1>
+                  <div className="h-1/12 w-full border-b-gray-400 border-b-2 flex">
+                    {isEditable ?
+                      <>
+                        <div className="w-11/12 h-full flex items-center justify-center">
+                          <h1 className="text-2xl flex items-center justify-center text-white">
+                            Authentication Analysis
+                          </h1>
+                        </div>
+                        <div className="w-1/12 h-full flex items-center justify-center p-2">
+                          <button className="bg-green-700 px-2 py-1 rounded-lg"
+                                  onClick={handleSaveServerRecommendation}>Save
+                          </button>
+                        </div>
+                      </>
+                      :
+                      <>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <h1 className="text-2xl flex items-center justify-center">
+                            A2N Recommendations
+                          </h1>
+                        </div>
+                        <div className="w-1/12 h-full flex items-center justify-center p-2">
+                          <button className="bg-green-700 px-2 py-1 rounded-lg"
+                                  onClick={handleEditServerRecommendation}>Edit
+                          </button>
+                        </div>
+                      </>
+                    }
                   </div>
                   <div className="h-5/6 w-full">
                     <div className="w-full h-full">
-                      <ul className="list-disc p-5">
-                        <li>We have observed an upward trend on the total log ingestion.</li>
-                        <li>We observed the use of attack type “Apache OFBiz Authentication Bypass (CVE-2023-51467)” is
-                          in a rise.
-                        </li>
-                        <li>General recommendation will be to upgrade Apache OFBiz software to version 18.12.11, If it
-                          exists on your network and if not done already.
-                        </li>
-                        <li>We recommend blocking these exploits on IPS if it is not required for operational
-                          purposes.
-                        </li>
-                        <li>A2N recommends to block all the malicious IP.</li>
-                      </ul>
+                      {isEditable ?
+                        <div className="w-full h-1/6 flex items-center justify-center">
+                          <div className="w-9/12 h-12 px-4 flex items-center justify-center">
+                            <input type="text"
+                                   value={serverRecommendation}
+                                   className="w-full px-2 text-gray-800 rounded-lg"
+                                   name="endpointProtectionRecommendation"
+                                   onChange={handleServerRecommendation}/>
+                          </div>
+                          <div className="w-3/12 h-12 flex items-center justify-center px-5">
+                            <input value="Add" type="button"
+                                   className="bg-green-700 rounded-lg w-10/12 py-1 shadow-lg"
+                                   onClick={addServerRecommendation}/>
+                          </div>
+                        </div>
+                        :
+                        ''
+                      }
+                      <div className="w-full h-5/6 flex items-center justify-center">
+                        <div className="w-11/12 h-5/6">
+                          <ul className="list-disc">
+                            {
+                              serverRecommendationList.length > 0 ?
+                                serverRecommendationList.map((recommendation, index) => {
+                                  return <div className="flex py-1" key={index}>
+                                    <li className="w-11/12">{recommendation.comment}</li>
+                                    {isEditable ?
+                                      <div className="w-1/12 flex items-center justify-center">
+                                        <button onClick={() => handleServerRecommendationRemove(index)}
+                                                className="py-1 px-2 bg-white/10">
+                                          <FontAwesomeIcon className="text-red-700" icon={faTrashCan}/>
+                                        </button>
+                                      </div>
+                                      :
+                                      ''
+                                    }
+                                  </div>
+                                })
+                                :
+                                ''
+                            }
+                          </ul>
+                        </div>
                     </div>
                   </div>
                 </div>
@@ -936,7 +1149,8 @@ const ComponentAnalyzingServer = (props) => {
         </div>
       </div>
     </div>
-  )
+</div>
+)
 
 }
 

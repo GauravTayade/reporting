@@ -1,3 +1,5 @@
+'use client'
+
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faCircleCheck,
@@ -14,23 +16,24 @@ import {useContext, useEffect, useState} from "react";
 import userContext from "@/context/userContext";
 import axios from "axios";
 import {useRouter} from "next/router";
+
 import Image from "next/image";
 import Swal from "sweetalert2";
 
-const Dashboard = (props) => {
-
-  const router = useRouter()
-
-  const endDate = new Date().toLocaleDateString("en-CA")
-  const tempDate = new Date()
-  const startDate = new Date(tempDate.setDate(tempDate.getDate() - 7)).toLocaleDateString("en-CA")
+const Dashboard = () => {
 
   const userDataContext = useContext(userContext)
+  const router = useRouter()
+
   const [selectedCustomers, setSelectedCustomer] = useState([])
   const [selectedReports, setSelectedReports] = useState([])
   const [customerList, setCustomerList] = useState([])
   const [selectedStartDate,setSelectedStartDate] = useState()
   const [selectedEndDate,setSelectedEndDate] = useState()
+  const endDate = new Date().toLocaleDateString("en-CA")
+  const tempDate = new Date()
+  const startDate = new Date(tempDate.setDate(tempDate.getDate() - 7)).toLocaleDateString("en-CA")
+
 
   const [reportsList, setReportsList] = useState([
     {reportId: 1, reportName: "Data Source Report", reportIcon: faShieldHalved},
@@ -78,10 +81,10 @@ const Dashboard = (props) => {
     let currentDate = new Date().toLocaleDateString("en-CA")
     let tempStartDate = e.target.value
 
-    if(tempStartDate >= currentDate){
+    if(tempStartDate >= currentDate || tempStartDate >= selectedEndDate){
       Swal.fire({
         title:"Start Date",
-        text:"Cant't be in future",
+        text:"Cant't be in future or after end date",
         icon:'error',
         showConfirmButton:true,
         timer:5000
@@ -96,7 +99,7 @@ const Dashboard = (props) => {
     let currentDate = new Date().toLocaleDateString("en-CA")
     let tempEndDate = e.target.value
 
-    if(tempEndDate > currentDate || tempEndDate < selectedStartDate){
+    if(tempEndDate > currentDate || tempEndDate < selectedStartDate ){
       Swal.fire({
         title:"End Date",
         text:"Cant't be in future or less then start date",
@@ -106,7 +109,6 @@ const Dashboard = (props) => {
       })
     }else{
       userDataContext.reportEndDate = e.target.value
-      console.log(userDataContext)
       setSelectedEndDate(e.target.value)
     }
   }
@@ -127,26 +129,39 @@ const Dashboard = (props) => {
     getCustomerList()
   }, []);
 
+  useEffect(() => {
+
+    if(router.query.s_date){
+      setSelectedStartDate(router.query.s_date)
+      userDataContext.reportStartDate = router.query.s_date
+    }
+
+    if(router.query.e_date){
+      setSelectedEndDate(router.query.e_date)
+      userDataContext.reportEndDate = router.query.e_date
+    }
+
+
+  }, [router.query.c_id, router.query.s_date,router.query.e_date]);
+
   const handleGenerateReport = () =>{
 
-    if(selectedStartDate == null || selectedEndDate == null){
+    if(selectedStartDate && selectedEndDate){
+      router.push("/ReportPage")
+    }else{
       Swal.fire({
         title:"Date Error",
-        text:"Please select report start date and end date",
+        text:"Please select Report start date and end date correctly",
         icon:"error",
         showConfirmButton:true,
         timer:5000
       })
-    }else{
-      router.push("/ReportPage")
     }
-
-    // console.log(userDataContext)
   }
 
   return (
     <userContext.Provider value={{selectedCustomer: [], selectedReports: []}}>
-      <div className="w-screen h-screen p-2 bg-gradient-to-bl from-blue-900 to-teal-900">
+      <div className="w-screen h-screen p-2 bg-blue-900">
         <div className="w-full h-full grid grid-cols-12 grid-rows-12">
           <div
             className="row-span-1 col-span-4 bg-white/10 flex items-center justify-between pl-5">
@@ -165,16 +180,18 @@ const Dashboard = (props) => {
             className="row-span-1 col-span-4 bg-white/10 flex items-center justify-center text-white">
             <div className="w-1/4 h-full flex justify-end items-center">Start Date:</div>
             <div className="w-1/4 h-full flex items-center justify-center">
-              <input name="ctrlStartDate" className="text-gray-800 rounded-2xl px-2" type="date" onChange={handleReportStartDate} required/>
+              <input name="ctrlStartDate" className="text-gray-800 rounded-2xl px-2" type="date"
+                       value={selectedStartDate} onChange={handleReportStartDate} required/>
             </div>
             <div className="w-1/4 h-full flex justify-end items-center">End Date:</div>
             <div className="w-1/4 h-full flex items-center justify-center">
-              <input name="ctrlEndDate" className="text-gray-800 rounded-2xl px-2" type="date" onChange={handleReportEndDate} required/>
+              <input name="ctrlEndDate" className="text-gray-800 rounded-2xl px-2" type="date" value={selectedEndDate}
+                       onChange={handleReportEndDate} required/>
             </div>
           </div>
           <div
             className="row-span-1 col-span-4 bg-white/10 flex items-center justify-end pr-5">
-            <button
+          <button
               className="bg-green-700 hover:bg-green-800 delay-75 duration-200 text-white font-bold py-2 px-4 rounded"
               onClick={handleGenerateReport}
             >Generate
