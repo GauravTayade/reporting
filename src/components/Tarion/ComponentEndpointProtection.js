@@ -5,18 +5,24 @@ import {useContext, useEffect, useState} from "react";
 import userContext from "@/context/userContext";
 import axios from "axios"
 import Swal from "sweetalert2";
+import ReportContext from "@/context/ReportContext";
+import {useSession} from "next-auth/react";
 
 
 const ComponentEndpointProtection = (props) => {
 
   //get user context data
-  const userDataContext = useContext(userContext)
+  //const userDataContext = useContext(userContext)
+  const {reportContextData, setReportContextData} = useContext(ReportContext)
+
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
-  const employeeId = userDataContext.employeeId ? userDataContext.employeeId : 0
-  const reportId = userDataContext.reportId ? userDataContext.reportId : 0
+  const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
+  const reportStartDate = reportContextData.reportStartDate ? reportContextData.reportStartDate : null
+  const reportEndDate = reportContextData.reportEndDate ? reportContextData.reportEndDate : null
+  const previousReportStartDate = reportContextData.previousReportStartDate ? reportContextData.previousReportStartDate : null
+  const previousReportEndDate = reportContextData.previousReportEndDate ? reportContextData.previousReportEndDate : null
+  const employeeId = reportContextData.employeeId ? reportContextData.employeeId : 0
+  const reportId = reportContextData.reportId ? reportContextData.reportId : 0
 
   const initialValues = {
     total_log_counts: 0,
@@ -46,7 +52,9 @@ const ComponentEndpointProtection = (props) => {
   const [deviceType, setDeviceType] = useState()
   const [endpointProtectionRecommendation, setEndpointProtectionRecommendation] = useState()
   const [endpointProtectionRecommendationList, setEndpointProtectionRecommendationList] = useState([])
-  const [isEditable, setIsEditable] = useState(true)
+  const [isEditable, setIsEditable] = useState(false)
+
+  const {data:sessionData,status} = useSession()
 
   const getEndpointRecommendation =async ()=>{
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
@@ -56,17 +64,18 @@ const ComponentEndpointProtection = (props) => {
       }
     })
       .then(response=>{
+        setEndpointProtectionRecommendationList([])
         if(response.data.length > 0){
+          const temp = []
           response.data.map(comment=>{
-            let temp = endpointProtectionRecommendationList
             temp.push({
               'comment': comment.comment,
               'category': comment.category,
-              'crId': comment.cr_id,
+              'crId': comment.crc_id,
               'employeeId': comment.employee_id
             })
-            setEndpointProtectionRecommendationList(temp)
           })
+          setEndpointProtectionRecommendationList(temp)
         }
       })
       .catch(error=>{
@@ -75,32 +84,43 @@ const ComponentEndpointProtection = (props) => {
   }
 
   const handleSaveEndpointRecommendation = () => {
-    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/saveRecommendation", {
-      endpointRecommendations: endpointProtectionRecommendationList
-    })
-      .then(response => {
-        if (response.data.output === false) {
-          Swal.fire({
-            title: "Error",
-            text: "Something went wrong while savin comment",
-            icon: "error"
-          })
-        } else {
-          Swal.fire({
-            title: "Success",
-            text: "Your Comments has been saved successfully",
-            icon: "success"
-          })
-          setIsEditable(!isEditable)
-        }
+
+    if(endpointProtectionRecommendationList.length > 0 ){
+      axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/saveRecommendation", {
+        endpointRecommendations: endpointProtectionRecommendationList
       })
-      .catch(error => {
-        console.log(error)
-      })
+        .then(response => {
+          if (response.data.output === false) {
+            Swal.fire({
+              title: "Error",
+              text: "Something went wrong while savin comment",
+              icon: "error"
+            })
+          } else {
+            Swal.fire({
+              title: "Success",
+              text: "Your Comments has been saved successfully",
+              icon: "success"
+            })
+            setIsEditable(!isEditable)
+          }
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    }else{
+      Swal.fire({
+        position: "top-end",
+        icon: "error",
+        title: "Please Enter Recommendation to save",
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
   }
 
   const handleEditEndpointRecommendation = () => {
-    setIsEditable(!isEditable)
+      setIsEditable(!isEditable)
   }
 
   const handleEndpointProtectionRecommendation = (e) => {
@@ -117,6 +137,7 @@ const ComponentEndpointProtection = (props) => {
       'employeeId': employeeId
     })
     setEndpointProtectionRecommendationList(temp)
+    console.log(temp)
     setEndpointProtectionRecommendation('')
   }
 
@@ -252,12 +273,12 @@ const ComponentEndpointProtection = (props) => {
         console.log(error)
       })
 
-  }, []);
+  }, [reportContextData]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-screen h-screen">
       <div className="w-full h-full grid grid-cols-12 grid-rows-16 gap-2">
-        <div className="col-span-12 row-span-2 flex">
+        <div className="col-span-12 row-span-2 flex px-5">
           <div className="h-full w-2/12">
             <div className="w-full h-full bg-logo bg-contain bg-center bg-no-repeat">
             </div>
@@ -432,7 +453,7 @@ const ComponentEndpointProtection = (props) => {
                         </div>
                         <div className="h-2/6 flex items-center justify-center">
                           <h1
-                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_trojan_detected : 0}<small>/{endpointProtectionData ? endpointProtectionData.total_trojan_detected_permitted : 0}</small>
+                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_trojan_detected : 0} / <small className="text-green-600">{endpointProtectionData ? endpointProtectionData.total_trojan_detected_permitted : 0}</small>
                           </h1>
                         </div>
                         <div className="h-2/6 flex">
@@ -447,7 +468,7 @@ const ComponentEndpointProtection = (props) => {
                         </div>
                         <div className="h-2/6 flex items-center justify-center">
                           <h1
-                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_url_filter_detected : 0}<small>/{endpointProtectionData ? endpointProtectionData.total_url_filter_detected_permitted : 0}</small>
+                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_url_filter_detected : 0} / <small className="text-green-600">{endpointProtectionData ? endpointProtectionData.total_url_filter_detected_permitted : 0}</small>
                           </h1>
                         </div>
                         <div className="h-2/6 flex">
@@ -462,7 +483,7 @@ const ComponentEndpointProtection = (props) => {
                         </div>
                         <div className="h-2/6 flex items-center justify-center">
                           <h1
-                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_malware_detected : 0}<small>/{endpointProtectionData ? endpointProtectionData.total_malware_detected_permitted : 0}</small>
+                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_malware_detected : 0} / <small className="text-green-600">{endpointProtectionData ? endpointProtectionData.total_malware_detected_permitted : 0}</small>
                           </h1>
                         </div>
                         <div className="h-2/6 flex">
@@ -477,7 +498,7 @@ const ComponentEndpointProtection = (props) => {
                         </div>
                         <div className="h-2/6 flex items-center justify-center">
                           <h1
-                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_riskware_detected : 0}<small>/{endpointProtectionData ? endpointProtectionData.total_riskware_detected_permitted : 0}</small>
+                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_riskware_detected : 0} / <small className="text-green-600">{endpointProtectionData ? endpointProtectionData.total_riskware_detected_permitted : 0}</small>
                           </h1>
                         </div>
                         <div className="h-2/6 flex">
@@ -504,7 +525,7 @@ const ComponentEndpointProtection = (props) => {
                         </div>
                         <div className="h-2/6 flex items-center justify-center">
                           <h1
-                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_ransomware_detected : 0}<small>/{endpointProtectionData ? endpointProtectionData.total_ransomware_detected_permitted : 0}</small>
+                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_ransomware_detected : 0} / <small className="text-green-600">{endpointProtectionData ? endpointProtectionData.total_ransomware_detected_permitted : 0}</small>
                           </h1>
                         </div>
                         <div className="h-2/6 flex">
@@ -531,7 +552,7 @@ const ComponentEndpointProtection = (props) => {
                         </div>
                         <div className="h-2/6 flex items-center justify-center">
                           <h1
-                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_phishing_detected : 0}<small>/{endpointProtectionData ? endpointProtectionData.total_phishing_detected_permitted : 0}</small>
+                            className="text-3xl font-semibold">{endpointProtectionData ? endpointProtectionData.total_phishing_detected : 0} / <small className="text-green-600">{endpointProtectionData ? endpointProtectionData.total_phishing_detected_permitted : 0}</small>
                           </h1>
                         </div>
                         <div className="h-2/6 flex">
@@ -542,59 +563,6 @@ const ComponentEndpointProtection = (props) => {
                   </div>
                 </div>
               </div>
-              {/*<div className="col-span-4 row-span-6 text-white">*/}
-              {/*  <div*/}
-              {/*    className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">*/}
-              {/*    <div className="h-1/6 w-full  border-b-gray-400 border-b-2">*/}
-              {/*      <h1 className="text-2xl flex items-center justify-center">*/}
-              {/*        Threat Indicators <small className="text-sm"></small>*/}
-              {/*      </h1>*/}
-              {/*    </div>*/}
-              {/*    <div className="h-5/6 w-full flex items-center justify-center">*/}
-              {/*      <div className="h-full w-full">*/}
-              {/*        <div className="w-full h-1/2 flex border-b border-b-gray-400">*/}
-              {/*          <div className="h-full w-4/12">*/}
-              {/*            <div className="h-2/6 w-full border-b-gray-200 border-b flex items-center justify-center">*/}
-              {/*              <h1 className="text-center">Overall Efficiency</h1>*/}
-              {/*            </div>*/}
-              {/*            <div className="h-4/6 w-full flex items-center justify-center">*/}
-              {/*              <h1 className="text-5xl">99%</h1>*/}
-              {/*            </div>*/}
-              {/*          </div>*/}
-              {/*          <div className="w-full h-full pl-8">*/}
-              {/*            <ul className="list-disc">*/}
-              {/*              <li>*/}
-              {/*                Overall Efficiency shows the changes from the initial scan to the current scan.*/}
-              {/*              </li>*/}
-              {/*            </ul>*/}
-              {/*          </div>*/}
-              {/*        </div>*/}
-              {/*        <div className="w-full h-1/2 flex">*/}
-              {/*          <div className="h-full w-4/12">*/}
-              {/*            <div className="h-2/6 w-full border-b-gray-200 border-b flex items-center justify-center">*/}
-              {/*              <h1 className="text-center">MoM Risk Exposure</h1>*/}
-              {/*            </div>*/}
-              {/*            <div className="h-4/6 w-full flex items-center justify-center">*/}
-              {/*              <h1 className="text-5xl">*/}
-              {/*                <small><FontAwesomeIcon icon={faArrowUp} className="text-red-700"/></small>*/}
-              {/*                100%*/}
-              {/*              </h1>*/}
-              {/*            </div>*/}
-              {/*          </div>*/}
-              {/*          <div className="w-full h-full pl-8">*/}
-              {/*            <ul className="list-disc">*/}
-              {/*              <li>*/}
-              {/*                M2M Exposure (Month to Month) shows exposure changes monthly comparing the current scan*/}
-              {/*                to*/}
-              {/*                previous scan.*/}
-              {/*              </li>*/}
-              {/*            </ul>*/}
-              {/*          </div>*/}
-              {/*        </div>*/}
-              {/*      </div>*/}
-              {/*    </div>*/}
-              {/*  </div>*/}
-              {/*</div>*/}
               <div className="col-span-4 row-span-12 text-white">
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
@@ -619,11 +587,15 @@ const ComponentEndpointProtection = (props) => {
                             A2N Recommendations
                           </h1>
                         </div>
+                        {(sessionData.user.role === 'admin' && (reportContextData.reportPending || reportContextData.reportReadyReview)) || (sessionData.user.role === 'user' && (reportContextData.reportPending)) ?
                         <div className="w-1/12 h-full flex items-center justify-center p-2">
                           <button className="bg-green-700 px-2 py-1 rounded-lg"
                                   onClick={handleEditEndpointRecommendation}>Edit
                           </button>
                         </div>
+                          :
+                          <></>
+                        }
                       </>
                     }
                   </div>

@@ -2,10 +2,21 @@ import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
 import UserContext from "@/context/userContext";
 import {useContext} from "react";
+import {signIn, useSession} from "next-auth/react";
+import Swal from "sweetalert2";
+import {NextRequest} from "next/server";
+import {Spinner} from "@nextui-org/react";
 
-const Login = (props) => {
+export default function Login(){
 
   const router = useRouter();
+  const {data, status} = useSession()
+  const { callbackUrl } = router.query;
+  const [isLoading, setIsLoading] = useState(false);
+
+  // if(status === 'authenticated' && data.user){
+  //   router.push('/dashboard')
+  // }
 
   const [userObject,setUserObject] = useState({
     username:null,
@@ -20,26 +31,46 @@ const Login = (props) => {
     setUserObject({...userObject, [e.target.name]: e.target.value})
   }
 
-  const userLogin = (e) => {
+  const userLogin = async (e) => {
     e.preventDefault()
-    if (userObject.username !== undefined && userObject.password !== undefined) {
-      if (userObject.username === process.env.NEXT_PUBLIC_ADMIN_USERNAME && userObject.password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-        userDataContext.isLoggedIn = true;
-        userDataContext.username = userObject.username
-        router.push("/Dashboard")
+    setIsLoading(true)
+    try {
+      const result = await signIn("credentials", {
+        username: userObject.username,
+        password: userObject.password,
+        redirect: false,
+        //callbackUrl: callbackUrl ? callbackUrl : '/dashboard'
+        callbackUrl: '/dashboard'
+      })
+
+      if (result?.error) {
+        Swal.fire({
+          position: "top-end",
+          icon: "error",
+          title: "Invalid Credentials",
+          showConfirmButton: false,
+          timer: 2000
+        });
       } else {
-        setErrorMessage({message: "Invalid username or password"})
+        // Redirect to the callback URL or handle success
+        setIsLoading(false)
+        await router.push(callbackUrl ? callbackUrl : '/dashboard')
       }
+
+    } catch (error) {
+      Swal.fire({
+        position: "top-end",
+        icon: "error",
+        title: error,
+        showConfirmButton: false,
+        timer: 2000
+      });
     }
+    setIsLoading(false)
   }
 
-  useEffect(() => {
-    console.log("next js app is working")
-    console.log("userContext from login page",userDataContext)
-  }, []);
-
   return(
-    <div className="w-screen h-screen">
+    <div className="w-screen h-screen bg-indigo-800">
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <img
@@ -96,13 +127,20 @@ const Login = (props) => {
             </div>
 
             <div>
-              <button
-                type="submit"
-                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                onClick={userLogin}
-              >
-                Sign in
-              </button>
+              {isLoading ?
+                <div className="lex w-full justify-center">
+                  <Spinner label="Primary" color="primary" labelColor="primary"/>
+                </div>
+                :
+                <button
+                  type="submit"
+                  id="login"
+                  className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  onClick={userLogin}
+                >
+                  Sign in
+                </button>
+              }
             </div>
             <div>
               {errorMessage ? errorMessage.message : ''}
@@ -119,7 +157,4 @@ const Login = (props) => {
       </div>
     </div>
   )
-
 }
-
-export default Login;

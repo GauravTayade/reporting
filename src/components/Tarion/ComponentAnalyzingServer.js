@@ -11,17 +11,22 @@ import {
   formatNumber, getAverageLogsPerDay, getAverageLogsPerMinuts, getNewDateRange, getPercentageDifference
 } from "@/Utilities/Utilities"
 import Swal from "sweetalert2";
+import ReportContext from "@/context/ReportContext";
+import {useSession} from "next-auth/react";
 
 const ComponentAnalyzingServer = (props) => {
 
   //get user context data
-  const userDataContext = useContext(userContext)
+  //const userDataContext = useContext(userContext)
+  const {reportContextData, setReportContextData} = useContext(ReportContext)
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
-  const employeeId = userDataContext.employeeId ? userDataContext.employeeId : 0
-  const reportId = userDataContext.reportId ? userDataContext.reportId : 0
+  const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
+  const reportStartDate = reportContextData.reportStartDate ? reportContextData.reportStartDate : null
+  const reportEndDate = reportContextData.reportEndDate ? reportContextData.reportEndDate : null
+  const previousReportStartDate = reportContextData.previousReportStartDate ? reportContextData.previousReportStartDate : null
+  const previousReportEndDate = reportContextData.previousReportEndDate ? reportContextData.previousReportEndDate : null
+  const employeeId = reportContextData.employeeId ? reportContextData.employeeId : 0
+  const reportId = reportContextData.reportId ? reportContextData.reportId : 0
 
   const [analyzingServer, setAnalyzingServer] = useState({
     total_server_subscription_count:0,
@@ -57,9 +62,9 @@ const ComponentAnalyzingServer = (props) => {
 
   const [serverRecommendation, setServerRecommendation] = useState()
   const [serverRecommendationList, setServerRecommendationList] = useState([])
-  const [isEditable, setIsEditable] = useState(true)
+  const [isEditable, setIsEditable] = useState(false)
 
-
+  const {data:sessionData,status} = useSession()
 
   let data = {
     total_subscriptions_count: 0,   //find-endpoint-count-total
@@ -84,17 +89,18 @@ const ComponentAnalyzingServer = (props) => {
       }
     })
       .then(response=>{
+        setServerRecommendationList([])
         if(response.data.length > 0){
+          const temp = []
           response.data.map(comment=>{
-            let temp = serverRecommendationList
             temp.push({
               'comment': comment.comment,
               'category': comment.category,
-              'crId': comment.cr_id,
+              'crId': comment.crc_id,
               'employeeId': comment.employee_id
             })
-            setServerRecommendationList(temp)
           })
+          setServerRecommendationList(temp)
         }
       })
       .catch(error=>{
@@ -103,28 +109,39 @@ const ComponentAnalyzingServer = (props) => {
   }
 
   const handleSaveServerRecommendation = () => {
-    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/saveRecommendation", {
-      endpointRecommendations: serverRecommendationList
-    })
-      .then(response => {
-        if (response.data.output === false) {
-          Swal.fire({
-            title: "Error",
-            text: "Something went wrong while savin comment",
-            icon: "error"
-          })
-        } else {
-          Swal.fire({
-            title: "Success",
-            text: "Your Comments has been saved successfully",
-            icon: "success"
-          })
-          setIsEditable(!isEditable)
-        }
+    if(serverRecommendationList.length > 0){
+      axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/saveRecommendation", {
+        endpointRecommendations: serverRecommendationList
       })
-      .catch(error => {
-        console.log(error)
-      })
+        .then(response => {
+          if (response.data.output === false) {
+            Swal.fire({
+              title: "Error",
+              text: "Something went wrong while savin comment",
+              icon: "error"
+            })
+          } else {
+            Swal.fire({
+              title: "Success",
+              text: "Your Comments has been saved successfully",
+              icon: "success"
+            })
+            setIsEditable(!isEditable)
+          }
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    }else{
+      Swal.fire({
+        position: "top-end",
+        icon: "error",
+        title: "Please Enter Recommendation to save",
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
+
   }
 
   const handleEditServerRecommendation = () => {
@@ -151,8 +168,6 @@ const ComponentAnalyzingServer = (props) => {
   const handleServerRecommendationRemove = (indexRemove) => {
     setServerRecommendationList(serverRecommendationList.filter((recommendation, index) => index !== indexRemove))
   }
-
-
 
   const getUniqueServerCount = async () => {
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
@@ -204,13 +219,13 @@ const ComponentAnalyzingServer = (props) => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_authentication_count: response.data[0].totalauthenticationcount}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointAuthenticationCount",{
           params:{
             customerId: customerId,
-            startDate:prevDateRange.newStartDate,
-            endDate:prevDateRange.newEndDate
+            startDate:previousReportStartDate,
+            endDate:previousReportEndDate
           }
         })
           .then(async prevResponse=>{
@@ -241,13 +256,13 @@ const ComponentAnalyzingServer = (props) => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_failed_authentication_count: response.data[0].totalfailedauthentication}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalFailedAuthenticationCount",{
           params:{
             customerId: customerId,
-            startDate:prevDateRange.newStartDate,
-            endDate:prevDateRange.newEndDate
+            startDate:previousReportStartDate,
+            endDate:previousReportEndDate
           }
         })
           .then(async prevResponse=>{
@@ -275,13 +290,13 @@ const ComponentAnalyzingServer = (props) => {
       .then(async response => {
         setAnalyzingServer((prevState=>{return{...prevState,total_server_registry_changes_count:response.data[0].totalregistrychangecount}}))
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointRegistryChangesCount",{
           params:{
             customerId: customerId,
-            startDate:prevDateRange.newStartDate,
-            endDate:prevDateRange.newEndDate
+            startDate:previousReportStartDate,
+            endDate:previousReportEndDate
           }
         })
           .then(async prevResponse=>{
@@ -311,13 +326,13 @@ const ComponentAnalyzingServer = (props) => {
        setAnalyzingServer(prevState => {return{...prevState,total_server_service_creation_count: response.data[0].totalservicecreationcount}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
           params: {
             customerId: customerId,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate: previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(async prevResponse => {
@@ -347,13 +362,13 @@ const ComponentAnalyzingServer = (props) => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_process_creation_count:response.data[0].totalprocesscreationcount}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointProcessCreationCount', {
           params: {
             customerId: customerId,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate: previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(async prevResponse => {
@@ -384,13 +399,13 @@ const ComponentAnalyzingServer = (props) => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_policy_changes_count: response.data[0].totalpolicychangescount}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
           params: {
             customerId: customerId,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate: previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(async prevResponse => {
@@ -420,13 +435,13 @@ const ComponentAnalyzingServer = (props) => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_file_creation_count:response.data[0].totalfilecreationcount}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
           params: {
             customerId: customerId,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate: previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(async prevResponse => {
@@ -503,12 +518,12 @@ const ComponentAnalyzingServer = (props) => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_unique_hosts_count: response.data.data.count}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host",{
           "index": "logs-*-tarion*",
-          "gte": prevDateRange.newStartDate+"T00:01:00",
-          "lt": prevDateRange.newEndDate+"T00:00:00"
+          "gte": previousReportStartDate+"T00:01:00",
+          "lt": previousReportEndDate+"T00:00:00"
         })
           .then(async prevResponse=>{
             await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
@@ -533,12 +548,12 @@ const ComponentAnalyzingServer = (props) => {
       .then(async response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_unique_username_count: response.data.data.count}})
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
           "index": "logs-*-tarion*",
-          "gte": prevDateRange.newStartDate+"T00:01:00",
-          "lt": prevDateRange.newEndDate+"T00:00:00"
+          "gte": previousReportStartDate+"T00:01:00",
+          "lt": previousReportEndDate+"T00:00:00"
         })
           .then(async prevResponse => {
             await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
@@ -574,12 +589,12 @@ const ComponentAnalyzingServer = (props) => {
     ]).then(() => {
 
     })
-  }, [])
+  }, [reportContextData])
 
   return (
-    <div className="w-full h-full">
+    <div className="w-screen h-screen">
       <div className="w-full h-full grid grid-cols-12 grid-rows-16 gap-2">
-        <div className="col-span-12 row-span-2 flex">
+        <div className="col-span-12 row-span-2 flex px-5">
           <div className="h-full w-2/12">
             <div className="w-full h-full bg-logo bg-contain bg-center bg-no-repeat">
             </div>
@@ -618,10 +633,10 @@ const ComponentAnalyzingServer = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count_per_minute)} <span className="text-sm">logs/m</span></h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(analyzingServer.total_server_log_ingestion_count_per_minute)} <span className="text-sm">logs/m</span></h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -799,7 +814,7 @@ const ComponentAnalyzingServer = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {analyzingServer.total_server_policy_changes_count_diff_percentage  === 0  ?
+                      {parseFloat(analyzingServer.total_server_policy_changes_count_diff_percentage)  === 0.00  ?
                           <>
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -1071,7 +1086,7 @@ const ComponentAnalyzingServer = (props) => {
                       <>
                         <div className="w-11/12 h-full flex items-center justify-center">
                           <h1 className="text-2xl flex items-center justify-center text-white">
-                            Authentication Analysis
+                            A2N Recommendations
                           </h1>
                         </div>
                         <div className="w-1/12 h-full flex items-center justify-center p-2">
@@ -1087,11 +1102,15 @@ const ComponentAnalyzingServer = (props) => {
                             A2N Recommendations
                           </h1>
                         </div>
+                        {(sessionData.user.role === 'admin' && (reportContextData.reportPending || reportContextData.reportReadyReview)) || (sessionData.user.role === 'user' && (reportContextData.reportPending)) ?
                         <div className="w-1/12 h-full flex items-center justify-center p-2">
                           <button className="bg-green-700 px-2 py-1 rounded-lg"
                                   onClick={handleEditServerRecommendation}>Edit
                           </button>
                         </div>
+                          :
+                          <></>
+                        }
                       </>
                     }
                   </div>

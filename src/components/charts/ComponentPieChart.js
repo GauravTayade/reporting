@@ -13,7 +13,8 @@ const options= {
       },
       position:"right",
     }
-  }
+  },
+  animation:false
 }
 
 const backgroundColorList =  [

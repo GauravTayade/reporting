@@ -9,15 +9,19 @@ import {compileNonPath} from "next/dist/shared/lib/router/utils/prepare-destinat
 import {faPlaneArrival} from "@fortawesome/free-solid-svg-icons/faPlaneArrival";
 import {faShield} from "@fortawesome/free-solid-svg-icons/faShield";
 import {formatNumber, getPercentageDifference, getNewDateRange} from "@/Utilities/Utilities";
+import ReportContext from "@/context/ReportContext";
 
 const ComponentGlobalTrafficAnalysis = (props) => {
 
   //get user context data
-  const userDataContext = useContext(userContext)
+  //const userDataContext = useContext(userContext)
+  const {reportContextData, setReportContextData} = useContext(ReportContext)
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
+  const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
+  const reportStartDate = reportContextData.reportStartDate ? reportContextData.reportStartDate : null
+  const reportEndDate = reportContextData.reportEndDate ? reportContextData.reportEndDate : null
+  const previousReportStartDate = reportContextData.previousReportStartDate ? reportContextData.previousReportStartDate : null
+  const previousReportEndDate = reportContextData.previousReportEndDate ? reportContextData.previousReportEndDate : null
 
   const initialValues = {
     total_unique_IPS_count: 0,
@@ -74,14 +78,14 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         })
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallIPSTrafficCount", {
           params: {
             firewallId: customerFirewallList.join(""),
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate: previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(prevResponse => {
@@ -94,7 +98,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
             }
           })
           .catch(error => {
-
+            console.log(error)
           })
       })
         .catch(error => {
@@ -117,13 +121,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
           return {...prevGlobalTrafficAnalysisData, total_unique_src_ip_count: response.data.data.count}
         })
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
         await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/src/ip", {
           "index": "firewall-checkpoint-tarion*",
-          "gte": prevDateRange.newStartDate,
-          "lt": prevDateRange.newEndDate
+          "gte": previousReportStartDate + "T00:01:00",
+          "lt": previousReportEndDate + "T00:01:00"
         })
           .then(async prevResponse => {
             getPercentageDifference(response.data.data.count, prevResponse.data.data.count).then(result => {
@@ -160,13 +164,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         })
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+       // const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
         const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/src", {
           "index": "firewall-checkpoint-tarion*",
-          "gte": prevDateRange.newStartDate + "T00:01:00",
-          "lt": prevDateRange.newEndDate + "T00:01:00"
+          "gte": previousReportStartDate + "T00:01:00",
+          "lt": previousReportEndDate + "T00:01:00"
         })
           .then(async prevResponse => {
 
@@ -206,13 +210,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         })
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
         const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/dest/ip", {
           "index": "firewall-checkpoint-tarion*",
-          "gte": prevDateRange.newStartDate,
-          "lt": prevDateRange.newEndDate
+          "gte": previousReportStartDate + "T00:01:00",
+          "lt": previousReportEndDate + "T00:01:00"
         })
           .then(prevResponse => {
             getPercentageDifference(response.data.data.count, prevResponse.data.data.count).then(result => {
@@ -248,20 +252,19 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         }
 
         setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
-          console.log(prevGlobalTrafficAnalysisData)
           return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_count: destCountryCount}
         })
 
         //setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {return {...prevGlobalTrafficAnalysisData,total_unique_dest_countries_count:response.data.data.count}})
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
         await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/dest", {
           "index": "firewall-checkpoint-tarion*",
-          "gte": prevDateRange.newStartDate + "T00:01:00",
-          "lt": prevDateRange.newEndDate + "T00:01:00"
+          "gte": previousReportStartDate + "T00:01:00",
+          "lt": previousReportEndDate + "T00:01:00"
         })
           .then(async prevResponse => {
 
@@ -399,12 +402,12 @@ const ComponentGlobalTrafficAnalysis = (props) => {
     getDestinationContinentTraffic()
     getIPSContinentTraffic()
 
-  }, []);
+  }, [reportContextData]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-screen h-screen">
       <div className="w-full h-full grid grid-cols-12 grid-rows-16 gap-2">
-        <div className="col-span-12 row-span-2 flex">
+        <div className="col-span-12 row-span-2 flex px-5">
           <div className="h-full w-2/12">
             <div className="w-full h-full bg-logo bg-contain bg-center bg-no-repeat">
             </div>
@@ -438,7 +441,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {globalTrafficAnalysisData.total_unique_IPS_diff_percentage === 0 ?
+                      {parseInt(globalTrafficAnalysisData.total_unique_IPS_diff_percentage) === 0 ?
                         <>
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -472,7 +475,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {globalTrafficAnalysisData.total_unique_src_ip_diff_percentage === 0 ?
+                      {parseInt(globalTrafficAnalysisData.total_unique_src_ip_diff_percentage) === 0 ?
                           <>
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -506,7 +509,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {globalTrafficAnalysisData.total_unique_src_countries_diff_percentage === 0 ?
+                      {parseInt(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) === 0 ?
                           <>
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -540,7 +543,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {globalTrafficAnalysisData.total_unique_dest_ip_diff_percentage === 0 ?
+                      {parseInt(globalTrafficAnalysisData.total_unique_dest_ip_diff_percentage) === 0 ?
                         <>
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -576,7 +579,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
 
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {globalTrafficAnalysisData.total_unique_dest_countries_diff_percentage === 0?
+                      {parseInt(globalTrafficAnalysisData.total_unique_dest_countries_diff_percentage) === 0?
                           <>
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -596,12 +599,12 @@ const ComponentGlobalTrafficAnalysis = (props) => {
             </div>
           </div>
         </div>
-        <div className="col-span-9 row-span-14 grid grid-cols-12 grid-rows-13 px-1 bg-opacity-5 rounded-lg gap-2">
+        <div className="col-span-9 row-span-14 grid grid-cols-12 grid-rows-13 bg-opacity-5 rounded-lg">
           <div
-            className="col-span-12 row-span-14 bg-map bg-center bg-contain bg-no-repeat rounded-lg grid grid-rows-18 grid-cols-18">
-            <div className="row-span-7 col-span-18"></div>
-            <div className="row-span-2 col-span-3"></div>
-            <div className="row-span-2 col-span-2">
+            className="col-span-12 row-span-12 grid grid-rows-16 grid-cols-18 bg-map bg-center bg-contain bg-no-repeat rounded-lg">
+            <div className="col-span-18 row-span-4"></div>
+            <div className="col-span-4 row-span-2"></div>
+            <div className="col-span-2 row-span-2">
               <div className="w-full h-full rounded-full bg-white bg-opacity-25">
                 <div className="rounded-full w-full h-full overflow-hidden">
                   <div className="h-1/3 w-full border-b-2 border-b-white text-center text-white">
@@ -619,8 +622,8 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                 </div>
               </div>
             </div>
-            <div className="row-span-2 col-span-3"></div>
-            <div className="row-span-2 col-span-2">
+            <div className="col-span-3 row-span-2"></div>
+            <div className="col-span-2 row-span-2">
               <div className="w-full h-full rounded-full bg-white bg-opacity-25">
                 <div className="rounded-full w-full h-full overflow-hidden">
                   <div className="h-1/3 w-full border-b-2 border-b-white text-center text-white">
@@ -638,8 +641,9 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                 </div>
               </div>
             </div>
-            <div className="col-span-1 row-span-1"></div>
-            <div className="row-span-2 col-span-2">
+            <div className="col-span-7 row-span-2"></div>
+            <div className="col-span-11 row-span-2"></div>
+            <div className="col-span-2 row-span-2">
               <div className="w-full h-full rounded-full bg-white bg-opacity-25">
                 <div className="rounded-full w-full h-full overflow-hidden">
                   <div className="h-1/3 w-full border-b-2 border-b-white text-center text-white">
@@ -657,10 +661,9 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                 </div>
               </div>
             </div>
-            <div className="col-span-5 row-span-1"></div>
-            <div className="col-span-18 row-span-1"></div>
-            <div className="col-span-8 row-span-1"></div>
-            <div className="row-span-2 col-span-2">
+            <div className="col-span-5 row-span-2"></div>
+            <div className="col-span-8 row-span-2"></div>
+            <div className="col-span-2 row-span-2">
               <div className="w-full h-full rounded-full bg-white bg-opacity-25">
                 <div className="rounded-full w-full h-full overflow-hidden">
                   <div className="h-1/3 w-full border-b-2 border-b-white text-center text-white">
@@ -678,9 +681,9 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                 </div>
               </div>
             </div>
-            <div className="col-span-8 row-span-1"></div>
+            <div className="col-span-8 row-span-2"></div>
             <div className="col-span-5 row-span-2"></div>
-            <div className="row-span-2 col-span-2">
+            <div className="col-span-2 row-span-2">
               <div className="w-full h-full rounded-full bg-white bg-opacity-25">
                 <div className="rounded-full w-full h-full overflow-hidden">
                   <div className="h-1/3 w-full border-b-2 border-b-white text-center text-white">
@@ -698,9 +701,9 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                 </div>
               </div>
             </div>
-            <div className="col-span-8 row-span-1"></div>
-            <div className="col-span-6 row-span-1"></div>
-            <div className="row-span-2 col-span-2">
+            <div className="col-span-6 row-span-2"></div>
+            <div className="col-span-5 row-span-1"></div>
+            <div className="col-span-2 row-span-2">
               <div className="w-full h-full rounded-full bg-white bg-opacity-25">
                 <div className="rounded-full w-full h-full overflow-hidden">
                   <div className="h-1/3 w-full border-b-2 border-b-white text-center text-white">
@@ -717,25 +720,6 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="row-span-1 col-span-3"></div>
-            <div className="row-span-1 col-span-18"></div>
-            <div className="row-span-1 col-span-18"></div>
-            <div className="row-span-1 col-span-18"></div>
-            <div className="col-span-18 row-span-1 grid grid-cols-7 grid-rows-1 border-2 border-white">
-              <div className="row-span-1 col-span-2"></div>
-              <div className="row-span-1 col-span-3 flex">
-                <div className="w-1/3 h-full text-white flex items-center justify-center">
-                  <FontAwesomeIcon icon={faPlaneDeparture} className="text-green-500"/> Outgoing Traffic
-                </div>
-                <div className="w-1/3 h-full text-white flex items-center justify-center">
-                  <FontAwesomeIcon icon={faPlaneArrival} className="text-yellow-500"/> Incoming Traffic
-                </div>
-                <div className="w-1/3 h-full text-white flex items-center justify-center">
-                  <FontAwesomeIcon icon={faShield} className="text-red-500"/> IPS Traffic
-                </div>
-              </div>
-              <div className="row-span-1 col-span-2"></div>
             </div>
           </div>
         </div>

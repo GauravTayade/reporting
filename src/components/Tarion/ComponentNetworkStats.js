@@ -4,15 +4,20 @@ import axios from "axios"
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faPlaneArrival} from "@fortawesome/free-solid-svg-icons/faPlaneArrival";
 import {faEthernet, faPlaneDeparture, faShieldDog} from "@fortawesome/free-solid-svg-icons";
+import ReportContext from "@/context/ReportContext";
 
 const ComponentNetworkStats = () =>{
 
   //get user context data
-  const userDataContext = useContext(userContext)
+  //const userDataContext = useContext(userContext)
+  const {reportContextData, setReportContextData} = useContext(ReportContext)
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
+  const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
+  const reportStartDate = reportContextData.reportStartDate ? reportContextData.reportStartDate : null
+  const reportEndDate = reportContextData.reportEndDate ? reportContextData.reportEndDate : null
+  //for future implimentation
+  const previousReportStartDate = reportContextData.previousReportStartDate ? reportContextData.previousReportStartDate : null
+  const previousReportEndDate = reportContextData.previousReportEndDate ? reportContextData.previousReportEndDate : null
 
   const [customerFirewallList, setCustomerFirewallList] = useState([])
   const [topNetworkProtocol, setTopNetworkProtocol] = useState([]);
@@ -49,6 +54,7 @@ const ComponentNetworkStats = () =>{
         })
     })
   }
+
   //get firewall top network rules
   const getFirewallTopNetworkRules = async () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
@@ -78,11 +84,11 @@ const ComponentNetworkStats = () =>{
   }
 
   const getFirewallUniqueSourceIPs = async () => {
-    const result = await axios.post("http://10.3.22.37:4434/api/v1/firewall/geo/unique/src/ip",
+    const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/geo/unique/src/ip",
       {
         "index":"firewall-checkpoint-tarion*",
-        "gte":"2024-06-25T00:01:00",
-        "lt":"2024-07-01T00:01:00"
+        "gte":reportStartDate + "T00:01:00",
+        "lt":reportEndDate + "T00:01:00"
       })
       .then(async response=>{
         await setSourceIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
@@ -91,12 +97,13 @@ const ComponentNetworkStats = () =>{
         console.log(error)
       })
   }
+
   const getFirewallUniqueDestinationIPs = async () => {
-    const result = await axios.post("http://10.3.22.37:4434/api/v1/firewall/geo/unique/dest/ip",
+    const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/geo/unique/dest/ip",
       {
         "index":"firewall-checkpoint-tarion*",
-        "gte":"2024-06-25T00:01:00",
-        "lt":"2024-07-01T00:01:00"
+        "gte":reportStartDate + "T00:01:00",
+        "lt":reportEndDate + "T00:01:00"
       })
       .then(async response=>{
         await setDestinationIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
@@ -106,9 +113,6 @@ const ComponentNetworkStats = () =>{
       })
   }
 
-
-
-
   useEffect(() => {
     Promise.all([
       getFirewallTopNetworkRules(),
@@ -116,12 +120,12 @@ const ComponentNetworkStats = () =>{
       getFirewallUniqueSourceIPs(),
       getFirewallUniqueDestinationIPs()
     ])
-  }, []);
+  }, [reportContextData]);
 
   return(
-    <div className="w-full h-full">
-      <div className="w-full h-full grid grid-cols-12 grid-rows-16 gap-2">
-        <div className="col-span-12 row-span-2 flex">
+    <div className="w-screen h-screen">
+      <div className="w-full h-full grid grid-cols-12 grid-rows-16">
+        <div className="col-span-12 row-span-2 flex px-5">
           <div className="h-full w-2/12">
             <div className="w-full h-full bg-logo bg-contain bg-center bg-no-repeat">
             </div>

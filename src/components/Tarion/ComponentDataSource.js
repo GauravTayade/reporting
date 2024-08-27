@@ -25,10 +25,9 @@ import {
   formatNumberPercentage
 } from '@/Utilities/Utilities'
 import {useRouter} from "next/router";
+import ReportContext from "@/context/ReportContext";
 
 const ComponentDataSource = (props) => {
-
-  const router = useRouter()
 
   const initialValues = {
     total_customer_firewall_data: 0,
@@ -79,11 +78,14 @@ const ComponentDataSource = (props) => {
   const [totalDeviceLogCountDiffPercentage, setTotalDeviceLogCountDiffPercentage] = useState(0);
 
   //get user context data
-  const userDataContext = useContext(userContext)
+  //const userDataContext = useContext(userContext)
+  const {reportContextData, setReportContextData} = useContext(ReportContext)
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
+  const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
+  const reportStartDate = reportContextData.reportStartDate ? reportContextData.reportStartDate : null
+  const reportEndDate = reportContextData.reportEndDate ? reportContextData.reportEndDate : null
+  const previousReportStartDate = reportContextData.previousReportStartDate ? reportContextData.previousReportStartDate : null
+  const previousReportEndDate = reportContextData.previousReportEndDate ? reportContextData.previousReportEndDate : null
 
 
   //get client firewalls count and logs count
@@ -114,14 +116,14 @@ const ComponentDataSource = (props) => {
           })
 
           //calculate new date range based on current date range difference.
-          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+          //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
           //get previous month log count
           await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallDataSourceDetails", {
             params: {
               customerId: customerId,
-              startDate: prevDateRange.newStartDate,
-              endDate: prevDateRange.newEndDate
+              startDate: previousReportStartDate,
+              endDate: previousReportEndDate
             }
           })
             .then(prevResponse => {
@@ -179,14 +181,14 @@ const ComponentDataSource = (props) => {
           })
 
           //calculate new date range based on current date range difference.
-          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+          //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
           //get previous month log count
           axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getEndpointDatSourceDetails", {
             params: {
               customerId: customerId,
-              startDate: prevDateRange.newStartDate,
-              endDate: prevDateRange.newEndDate
+              startDate: previousReportStartDate,
+              endDate: previousReportEndDate
             }
           })
             .then(prevResponse => {
@@ -244,14 +246,14 @@ const ComponentDataSource = (props) => {
             }
           })
           //calculate new date range based on current date range difference.
-          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+          //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
           //get previous month log count
           axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/nac/getNACDataSourceDetails", {
             params: {
               customerId: customerId,
-              startDate: prevDateRange.newStartDate,
-              endDate: prevDateRange.newEndDate
+              startDate: previousReportStartDate,
+              endDate: previousReportEndDate
             }
           })
             .then(prevResponse => {
@@ -309,14 +311,14 @@ const ComponentDataSource = (props) => {
           })
 
           //calculate new date range based on current date range difference.
-          const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+         // const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
           //get previous month log count
           axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRDataSourceDetails", {
             params: {
               customerId: customerId,
-              startDate: prevDateRange.newStartDate,
-              endDate: prevDateRange.newEndDate
+              startDate: previousReportStartDate,
+              endDate: previousReportEndDate
             }
           })
             .then(prevResponse => {
@@ -375,14 +377,14 @@ const ComponentDataSource = (props) => {
           })
         }
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
         axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getVAScanDataSourceDetails", {
           params: {
             customerId: customerId,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate:previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(prevResponse => {
@@ -581,7 +583,7 @@ const ComponentDataSource = (props) => {
     setDataManifestData(prevState=>{return{...prevState,total_customer_edr_log_ingestion_count_percentage: edrLogPercentage}})
     setDataManifestData(prevState=>{return{...prevState,total_customer_nuc_log_ingestion_count_percentage: nacLogPercentage}})
 
-  }, []);
+  }, [reportContextData]);
 
   useEffect(() => {
     Promise.all([
@@ -604,9 +606,9 @@ const ComponentDataSource = (props) => {
   }, [datasourceData,totalLogCount]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-screen h-screen">
       <div className="w-full h-full grid grid-cols-12 grid-rows-16 gap-2">
-        <div className="col-span-12 row-span-2 flex">
+        <div className="col-span-12 row-span-2 flex px-5">
           <div className="h-full w-2/12">
             <div className="w-full h-full bg-logo bg-contain bg-center bg-no-repeat">
             </div>
@@ -715,10 +717,10 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span></h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span></h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -746,11 +748,11 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span>
-                        </h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span>*/}
+                      {/*  </h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -779,12 +781,12 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)}
-                          <span className="text-sm"> logs/m</span>
-                        </h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)}*/}
+                      {/*    <span className="text-sm"> logs/m</span>*/}
+                      {/*  </h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -813,12 +815,12 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)}
-                          <span className="text-sm"> logs/m</span>
-                        </h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)}*/}
+                      {/*    <span className="text-sm"> logs/m</span>*/}
+                      {/*  </h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -856,14 +858,14 @@ const ComponentDataSource = (props) => {
                         <FontAwesomeIcon className="text-4xl" icon={faShield}/>
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">Firewall
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">Firewall
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{firewall.vendor}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{firewall.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{firewall.firewallcount}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{firewall.firewallcount}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{formatNumber(firewall.totallogs)}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(firewall.totallogs)}</div>
                     </>
                   )
                 })
@@ -880,14 +882,14 @@ const ComponentDataSource = (props) => {
                         <FontAwesomeIcon className="text-4xl" icon={faComputer}/>
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">Endpoint
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">Endpoint
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{endpoint.vendor}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{endpoint.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{endpoint.endpointcount}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{endpoint.endpointcount}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{formatNumber(endpoint.totallogs)}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(endpoint.totallogs)}</div>
                     </>
                   )
                 })
@@ -904,14 +906,14 @@ const ComponentDataSource = (props) => {
                         <FontAwesomeIcon className="text-4xl" icon={faEye}/>
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">EDR
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">EDR
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{edr.vendor}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{edr.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{edr.edrcount}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{edr.edrcount}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{formatNumber(edr.totallogs)}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(edr.totallogs)}</div>
                     </>
                   )
                 })
@@ -928,14 +930,14 @@ const ComponentDataSource = (props) => {
                         <FontAwesomeIcon className="text-4xl" icon={faDungeon}/>
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">NAC
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">NAC
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{nac.vendor}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{nac.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{nac.naccount}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{nac.naccount}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{formatNumber(nac.totallogs)}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(nac.totallogs)}</div>
                     </>
                   )
                 })
@@ -951,15 +953,16 @@ const ComponentDataSource = (props) => {
                         <FontAwesomeIcon className="text-4xl" icon={faMagnifyingGlass}/>
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">VA
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">VA
                         SCAN
                       </div>
+                      {/*<div className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{va.vendor}</div>*/}
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{va.vendor}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">A2N Scan</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{datasourceData.total_customer_va_data.length}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{datasourceData.total_customer_va_data.length}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center border-b-white border-b-2">{formatNumber(va.ivacount + va.evacount)}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(va.ivacount + va.evacount)}</div>
                     </>
                   )
                 })
@@ -970,23 +973,23 @@ const ComponentDataSource = (props) => {
               {datasourceData.total_customer_total_devices_count && datasourceData.total_customer_total_devices_log_count ?
                 <>
                   <div
-                    className="col-span-6 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">Total
+                    className="col-span-6 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-2xl">Total
                   </div>
                   <div
-                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">{datasourceData.total_customer_total_devices_count}</div>
+                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-2xl">{datasourceData.total_customer_total_devices_count}</div>
                   <div
-                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">{formatNumber(datasourceData.total_customer_total_devices_log_count)}</div>
+                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-2xl">{formatNumber(datasourceData.total_customer_total_devices_log_count)}</div>
                 </>
                 :
                 <>
                   <div
-                    className="col-span-6 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">Total
+                    className="col-span-6 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-2xl">Total
                   </div>
                   <div
-                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">00
+                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-2xl">00
                   </div>
                   <div
-                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-xl">00
+                    className="col-span-2 row-span-1 bg-white/10 flex items-center justify-center font-semibold text-2xl">00
                   </div>
                 </>
               }

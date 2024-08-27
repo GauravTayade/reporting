@@ -13,18 +13,25 @@ import {
   getNewDateRange, getAverageLogsPerDay, getAverageLogsPerMinuts
 } from '@/Utilities/Utilities'
 import Swal from "sweetalert2";
+import ReportContext from "@/context/ReportContext";
+import {useSession} from "next-auth/react";
 
 const ComponentAnalyzingGateway = (props) => {
 
-
   //get user context data
-  const userDataContext = useContext(userContext)
+  //const userDataContext = useContext(userContext)
+  const {reportContextData, setReportContextData} = useContext(ReportContext)
+
+  const {data:sessionData,status} = useSession()
+
   //get userContext data to get customerId
-  const customerId = userDataContext.selectedCustomer.length > 0 ? userDataContext.selectedCustomer[0].customerId : null
-  const reportStartDate = userDataContext.reportStartDate ? userDataContext.reportStartDate : null
-  const reportEndDate = userDataContext.reportEndDate ? userDataContext.reportEndDate : null
-  const employeeId = userDataContext.employeeId ? userDataContext.employeeId : 0
-  const reportId = userDataContext.reportId ? userDataContext.reportId : 0
+  const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
+  const reportStartDate = reportContextData.reportStartDate ? reportContextData.reportStartDate : null
+  const reportEndDate = reportContextData.reportEndDate ? reportContextData.reportEndDate : null
+  const previousReportStartDate = reportContextData.previousReportStartDate ? reportContextData.previousReportStartDate : null
+  const previousReportEndDate = reportContextData.previousReportEndDate ? reportContextData.previousReportEndDate : null
+  const employeeId = reportContextData.employeeId ? reportContextData.employeeId : 0
+  const reportId = reportContextData.reportId ? reportContextData.reportId : 0
 
   //useState variables to store state data
   const [result, setResult] = useState({})
@@ -53,10 +60,9 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const [analyzingGatewayData, setAnalyzingGatewayData] = useState(initialValues)
-
   const [gatewayRecommendation, setGatewayRecommendation] = useState()
   const [gatewayRecommendationList, setGatewayRecommendationList] = useState([])
-  const [isEditable, setIsEditable] = useState(true)
+  const [isEditable, setIsEditable] = useState(false)
 
   //initial values of variables
   let data = {
@@ -70,6 +76,8 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const getGatewayRecommendation =async ()=>{
+
+    console.log("report id",reportId)
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
       params:{
         crId:reportId,
@@ -77,17 +85,18 @@ const ComponentAnalyzingGateway = (props) => {
       }
     })
       .then(response=>{
+        setGatewayRecommendationList([])
         if(response.data.length > 0){
+          const temp = []
           response.data.map(comment=>{
-            let temp = gatewayRecommendationList
             temp.push({
               'comment': comment.comment,
               'category': comment.category,
-              'crId': comment.cr_id,
+              'crId': comment.crc_id,
               'employeeId': comment.employee_id
             })
-            setGatewayRecommendationList(temp)
           })
+          setGatewayRecommendationList(temp)
         }
       })
       .catch(error=>{
@@ -97,32 +106,44 @@ const ComponentAnalyzingGateway = (props) => {
 
   const handleSaveGatewayRecommendation = () => {
 
-    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/saveRecommendation", {
-      gatewayRecommendation: gatewayRecommendationList
-    })
-      .then(response => {
-        if (response.data.output === false) {
-          Swal.fire({
-            title: "Error",
-            text: "Something went wrong while savin comment",
-            icon: "error"
-          })
-        } else {
-          Swal.fire({
-            title: "Success",
-            text: "Your Comments has been saved successfully",
-            icon: "success"
-          })
-          setIsEditable(!isEditable)
-        }
+    if(gatewayRecommendationList.length > 0){
+      axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/saveRecommendation", {
+        gatewayRecommendation: gatewayRecommendationList
       })
-      .catch(error => {
-        console.log(error)
-      })
+        .then(response => {
+          if (response.data.output === false) {
+            Swal.fire({
+              title: "Error",
+              text: "Something went wrong while savin comment",
+              icon: "error"
+            })
+          } else {
+            Swal.fire({
+              title: "Success",
+              text: "Your Comments has been saved successfully",
+              icon: "success"
+            })
+            setIsEditable(!isEditable)
+          }
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    }else{
+      Swal.fire({
+        position: "top-end",
+        icon: "error",
+        title: "Please Enter Recommendation to save",
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
   }
 
   const handleEditGatewayRecommendation = () => {
-    setIsEditable(!isEditable)
+
+      setIsEditable(!isEditable)
+
   }
 
   const handleGatewayRecommendation = (e) => {
@@ -180,13 +201,13 @@ const ComponentAnalyzingGateway = (props) => {
         })
 
         //calculate new date range based on current date range difference.
-        const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+        //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
         await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
           params: {
             customerId: customerId,
-            startDate: prevDateRange.newStartDate,
-            endDate: prevDateRange.newEndDate
+            startDate: previousReportStartDate,
+            endDate: previousReportEndDate
           }
         })
           .then(async prevResponse => {
@@ -229,14 +250,14 @@ const ComponentAnalyzingGateway = (props) => {
           .then(async response => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_allowed_count: response.data[0].allowedtraffic}})
             //calculate new date range based on current date range difference.
-            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+            //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
             await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
               params: {
                 firewallId: firewallList,
-                startDate: prevDateRange.newStartDate,
-                endDate: prevDateRange.newEndDate
+                startDate: previousReportStartDate,
+                endDate: previousReportEndDate
               }
             })
               .then(async prevResponse => {
@@ -281,15 +302,15 @@ const ComponentAnalyzingGateway = (props) => {
           .then(async response => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_denied_count:response.data[0].deniedtraffic}})
             //calculate new date range based on current date range difference.
-            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+            //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
             await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
               params: {
                 firewallId: firewallList,
                 interval: 30,
-                startDate: prevDateRange.newStartDate,
-                endDate: prevDateRange.newEndDate
+                startDate: previousReportStartDate,
+                endDate: previousReportEndDate
               }
             })
               .then(async prevResponse => {
@@ -335,14 +356,14 @@ const ComponentAnalyzingGateway = (props) => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_IPS_count:response.data[0].ipstrafficcount}})
 
             //calculate new date range based on current date range difference.
-            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+            //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
             await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
               params: {
                 firewallId: firewallList,
-                startDate: prevDateRange.newStartDate,
-                endDate: prevDateRange.newEndDate
+                startDate: previousReportStartDate,
+                endDate: previousReportEndDate
               }
             })
               .then(async prevResponse => {
@@ -388,14 +409,14 @@ const ComponentAnalyzingGateway = (props) => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_admin_activities_count: response.data[0].adminactivitylogcount}})
 
             //calculate new date range based on current date range difference.
-            const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+            //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
             await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
               params: {
                 firewallId: firewallList,
-                startDate : prevDateRange.newStartDate,
-                endDate : prevDateRange.newEndDate
+                startDate: previousReportStartDate,
+                endDate: previousReportEndDate
               }
             })
               .then(prevResponse => {
@@ -481,6 +502,7 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const getIPSHitsAnalysis = async () => {
+    console.log("report start date",reportStartDate)
     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/attack/list", {
       "index": "firewall-checkpoint-tarion*",
       "gte":reportStartDate+"T00:01:00",
@@ -516,14 +538,15 @@ const ComponentAnalyzingGateway = (props) => {
       getIPSHitsAnalysis(),
       getGatewayRecommendation()
     ]).then(() => {
-      setResult(data)
+
     })
-  }, []);
+
+  }, [reportContextData]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-screen h-screen">
       <div className="w-full h-full grid grid-cols-12 grid-rows-16 gap-2">
-        <div className="col-span-12 row-span-2 flex">
+        <div className="col-span-12 row-span-2 flex px-5">
           <div className="h-full w-2/12">
             <div className="w-full h-full bg-logo bg-contain bg-center bg-no-repeat">
             </div>
@@ -560,10 +583,10 @@ const ComponentAnalyzingGateway = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center px-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count_per_minute)} <span className="text-sm"> logs/m</span></h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center px-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(analyzingGatewayData.total_firewall_log_ingestion_count_per_minute)} <span className="text-sm"> logs/m</span></h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -854,7 +877,7 @@ const ComponentAnalyzingGateway = (props) => {
                       <>
                         <div className="w-11/12 h-full flex items-center justify-center">
                           <h1 className="text-2xl flex items-center justify-center text-white">
-                            Security Overview Remarks
+                            A2N Recommendations
                           </h1>
                         </div>
                         <div className="w-1/12 h-full flex items-center justify-center p-2">
@@ -870,11 +893,15 @@ const ComponentAnalyzingGateway = (props) => {
                             A2N Recommendations
                           </h1>
                         </div>
-                        <div className="w-1/12 h-full flex items-center justify-center p-2">
-                          <button className="bg-green-700 px-2 py-1 rounded-lg"
-                                  onClick={handleEditGatewayRecommendation}>Edit
-                          </button>
-                        </div>
+                        {(sessionData.user.role === 'admin' && (reportContextData.reportPending || reportContextData.reportReadyReview)) || (sessionData.user.role === 'user' && (reportContextData.reportPending)) ?
+                          <div className="w-1/12 h-full flex items-center justify-center p-2">
+                            <button className="bg-green-700 px-2 py-1 rounded-lg"
+                                    onClick={handleEditGatewayRecommendation}>Edit
+                            </button>
+                          </div>
+                          :
+                          <></>
+                        }
                       </>
                     }
                   </div>
