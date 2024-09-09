@@ -202,110 +202,17 @@ const ComponentReport = ()=>{
         <div className="row-span-12 col-span-12 overflow-hidden">
           <div className="row-span-1 col-span-12">
             <ComponentNavigation/>
-            {/*<Navbar position="static" isBordered className="bg-white/10 text-white justify-evenly">*/}
-            {/*  <NavbarContent justify="left">*/}
-            {/*    <NavbarBrand>*/}
-            {/*      <Image*/}
-            {/*        className="mx-auto h-10 w-auto"*/}
-            {/*        src="/assets/images/logo_header_a2n.png"*/}
-            {/*        alt="Access 2 Network INC"*/}
-            {/*        width={270}*/}
-            {/*        height={120}*/}
-            {/*      />*/}
-            {/*    </NavbarBrand>*/}
-            {/*  </NavbarContent>*/}
-            {/*  <NavbarContent className="hidden sm:flex gap-4" justify="center">*/}
-            {/*    <NavbarItem>*/}
-            {/*      <Link className="text-white text-lg uppercase" href="/dashboard" aria-current="page">*/}
-            {/*        Dashboard*/}
-            {/*      </Link>*/}
-            {/*    </NavbarItem>*/}
-            {/*    <Dropdown>*/}
-            {/*      <NavbarItem>*/}
-            {/*        <DropdownTrigger>*/}
-            {/*          <Button className="p-0 text-lg uppercase text-white bg-transparent data-[hover=true]:bg-transparent" endContent={<FontAwesomeIcon icon={faChevronDown}/>} radius="sm" variant="light">Manage</Button>*/}
-            {/*        </DropdownTrigger>*/}
-            {/*      </NavbarItem>*/}
-            {/*      <DropdownMenu*/}
-            {/*        aria-label="ACME features"*/}
-            {/*        className="w-[340px]"*/}
-            {/*        itemClasses={{*/}
-            {/*          base: "gap-4",*/}
-            {/*        }}*/}
-            {/*      >*/}
-            {/*        <DropdownItem*/}
-            {/*          key="users"*/}
-            {/*          description="Manage user here"*/}
-            {/*          startContent={<FontAwesomeIcon className="text-lg text-gray-700" icon={faUser}/>}>*/}
-            {/*          <Link className="text-gray-700 capitalize" href="/users"> Users </Link>*/}
-            {/*        </DropdownItem>*/}
-            {/*        <DropdownItem*/}
-            {/*          key="devices"*/}
-            {/*          description="Manage customer devices"*/}
-            {/*          startContent={<FontAwesomeIcon className="text-lg text-gray-700" icon={faDatabase} />}>*/}
-            {/*          <Link className="text-gray-700 capitalize" href="/device"> Devices </Link>*/}
-            {/*        </DropdownItem>*/}
-            {/*      </DropdownMenu>*/}
-            {/*    </Dropdown>*/}
-            {/*    <NavbarItem isActive>*/}
-            {/*      {reportContextData.reportReviewed === true ?*/}
-            {/*      <Button color="secondary" className="text-white uppercase" onClick={handlePrint} href="#"*/}
-            {/*              aria-current="page">*/}
-            {/*        Print*/}
-            {/*      </Button>*/}
-            {/*        :*/}
-            {/*        ''*/}
-            {/*      }*/}
-            {/*    </NavbarItem>*/}
-            {/*    <NavbarItem>*/}
-            {/*      <Dropdown>*/}
-            {/*        <DropdownTrigger>*/}
-            {/*          <Button className="p-0 text-white text-lg uppercase bg-transparent data-[hover=true]:bg-transparent" endContent={<FontAwesomeIcon icon={faChevronDown}/>} radius="sm" variant="light">Status</Button>*/}
-            {/*        </DropdownTrigger>*/}
-            {/*        <DropdownMenu aria-label="profile action">*/}
-            {/*          {sessionData && (sessionData.user.role === 'admin' || sessionData.user.role === 'user') && reportContextData.reportPending === true ?*/}
-            {/*            <DropdownItem onClick={handleMarkForReview}>Ready for Review</DropdownItem> : ''}*/}
-            {/*          {sessionData && sessionData.user.role === 'admin' && reportContextData.reportReadyReview === true ?*/}
-            {/*            <DropdownItem*/}
-            {/*              onClick={handleReviewed}>Reviewed</DropdownItem> : "Report is currently Under Review"}*/}
-            {/*          {sessionData && (sessionData.user.role === 'admin' || sessionData.user.role === 'user') && reportContextData.reportReviewed === true ?*/}
-            {/*            <DropdownItem onClick={handleMarkDelivered}>Delivered</DropdownItem> : "Report is Delivered"}*/}
-            {/*        </DropdownMenu>*/}
-            {/*      </Dropdown>*/}
-            {/*    </NavbarItem>*/}
-            {/*  </NavbarContent>*/}
-            {/*  <NavbarContent justify="right">*/}
-            {/*    <NavbarItem className="hidden lg:flex">*/}
-            {/*      <Dropdown>*/}
-            {/*        <DropdownTrigger>*/}
-            {/*          <User className="text-white"*/}
-            {/*                name={sessionData ? sessionData.user.name.toUpperCase() : ''}*/}
-            {/*                description={sessionData ? sessionData.user.role : ''}*/}
-            {/*                avatarProps={{src: "https://i.pinimg.com/564x/4e/22/be/4e22beef6d94640c45a1b15f4a158b23.jpg"}}/>*/}
-            {/*        </DropdownTrigger>*/}
-            {/*        <DropdownMenu aria-label="profile action">*/}
-            {/*          <DropdownItem>*/}
-            {/*            <Link href="/users/profile" color="foreground">*/}
-            {/*              Profile*/}
-            {/*            </Link>*/}
-            {/*          </DropdownItem>*/}
-            {/*          <DropdownItem onClick={handleLogout}>Logout</DropdownItem>*/}
-            {/*        </DropdownMenu>*/}
-            {/*      </Dropdown>*/}
-            {/*    </NavbarItem>*/}
-            {/*  </NavbarContent>*/}
-            {/*</Navbar>*/}
           </div>
           <div ref={componentRef}
                className="w-full h-full overflow-y-scroll no-scrollbar row-span-11 col-span-12 bg-blue-900">
-            {/*<ComponentCustomerProfile/>*/}
-            {/*<ComponentDataSource/>*/}
+            <ComponentCustomerProfile/>
+            <ComponentDataSource/>
             {/*<ComponentDataManifest/> this component is no longer required*/}
-            {/*<ComponentAnalyzingGateway/>*/}
-            {/*<ComponentGlobalTrafficAnalysis/>*/}
-            {/*<ComponentNetworkStats/>*/}
-            {/*<ComponentAnalyzingServer/>*/}
-            {/*<ComponentEndpointProtection/>*/}
+            <ComponentAnalyzingGateway/>
+            <ComponentGlobalTrafficAnalysis/>
+            <ComponentNetworkStats/>
+            <ComponentAnalyzingServer/>
+            <ComponentEndpointProtection/>
             <ComponentDateReservoir/>
             {/*<ComponentAdvisoryWatchDog/> this component is no longer required*/}
           </div>

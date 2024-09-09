@@ -5,9 +5,7 @@ import reportContext from "@/context/ReportContext";
 
 const ComponentCustomerProfile = (props) =>{
 
-  //const userDataContext = useContext(userContext)
   const {reportContextData, setReportContextData} = useContext(ReportContext)
-  //get userContext data to get customerId
 
   const [customerData,setCustomerData] = useState(null)
 

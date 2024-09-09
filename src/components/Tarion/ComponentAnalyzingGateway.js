@@ -141,9 +141,7 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const handleEditGatewayRecommendation = () => {
-
       setIsEditable(!isEditable)
-
   }
 
   const handleGatewayRecommendation = (e) => {
@@ -249,9 +247,9 @@ const ComponentAnalyzingGateway = (props) => {
         })
           .then(async response => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_allowed_count: response.data[0].allowedtraffic}})
+
             //calculate new date range based on current date range difference.
             //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
-
             //get previous month log count
             await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
               params: {
