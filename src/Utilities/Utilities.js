@@ -76,7 +76,8 @@ export const getAverageLogsPerSeconds = async (startDate,endDate,logsCount)=>{
   let diff = Math.abs(currentEndDate - currentStartDate)
   let seconds = Math.ceil(diff / (1000))
 
-  return Math.ceil(logsCount/seconds)
+  return (logsCount/seconds)
+  //return Math.ceil(logsCount/seconds)
 }
 
 export const backgroundColorListHex = [

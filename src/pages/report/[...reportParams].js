@@ -7,12 +7,12 @@ import ComponentReport from "@/components/ComponentReport";
 import axios from "axios";
 import ReportContext from "@/context/ReportContext";
 import {useSession} from "next-auth/react";
-import {notFound} from "next/navigation";
+import {notFound, usePathname} from "next/navigation";
+import ComponentReportDelivered from "@/components/common/ComponentReportDelivered";
 
 export default function Report() {
 
   //tarion customer id : 43c1fb4c-47c5-48b8-9699-caf7c920e596
-  const userDataContext = useContext(userContext)
   const {reportContextData, setReportContextData} = useContext(ReportContext)
   const router = useRouter()
   const params = router.query.reportParams
@@ -50,7 +50,7 @@ export default function Report() {
           setReportContextData({
             ...reportContextData,
             reportId: response.data[0].report_id ? response.data[0].report_id : null,
-            employeeId: data ? data.user.id : '',
+            employeeId: data && data.user ? data.user.id : '',
             reportPending: response.data[0].report_pending ? response.data[0].report_pending : false,
             reportReadyReview: response.data[0].report_review_requested ? response.data[0].report_review_requested : false,
             reportReviewed: response.data[0].report_reviewed ? response.data[0].report_reviewed : false,
@@ -96,8 +96,11 @@ export default function Report() {
 
   return (
     <>
-      {reportContextData.selectedCustomer.length > 0 ?
+      {reportContextData.selectedCustomer.length > 0 && data && data.user ?
        // <userContext.Provider value={userDataContext}>
+        reportContextData.reportDelivered === true ?
+          <ComponentReportDelivered/>
+          :
           <ComponentReport/>
         //</userContext.Provider>
         :

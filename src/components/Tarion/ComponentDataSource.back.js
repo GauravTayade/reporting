@@ -69,11 +69,14 @@ const ComponentDataSource = (props) => {
     total_customer_nac_log_ingestion_count_percentage:0,
   }
   const logCountInitialValues = {logCount:0}
+
   const [dataManifestData,setDataManifestData] = useState(initialValues)
   const [totalLogCount,setTotalLogCount] = useState(logCountInitialValues)
+
   const [datasourceData, setDatasourceData] = useState(initialValues)
   const [totalDeviceDiffPercentage, setTotalDeviceDiffPercentage] = useState(0);
   const [totalDeviceLogCountDiffPercentage, setTotalDeviceLogCountDiffPercentage] = useState(0);
+
   //get user context data
   //const userDataContext = useContext(userContext)
   const {reportContextData, setReportContextData} = useContext(ReportContext)
@@ -152,6 +155,68 @@ const ComponentDataSource = (props) => {
 
   //get client servers count and logs count
   const getCustomerEndpoints = async () => {
+    // //get current period endpoint count
+    // await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
+    //   "index": "logs-*-tarion",
+    //   "gte": reportStartDate+"T00:01:00",
+    //   "lt": reportEndDate+"T23:59:00"
+    // }).then(async response => {
+    //   if (response.data) {
+    //     //set the endpoint count
+    //     await setDatasourceData(prevState => {
+    //       return {
+    //         ...prevState,
+    //         total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data.data.count)
+    //       }
+    //     })
+    //
+    //     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count/log",{
+    //       "index": "logs-*-tarion",
+    //       "gte": reportStartDate+"T00:01:00",
+    //       "lt": reportEndDate+"T23:59:00"
+    //     }).then(async response=>{
+    //       //set the log count
+    //       setDatasourceData(prevState => {
+    //         return {
+    //           ...prevState,
+    //           total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data.data.count)
+    //         }
+    //       })
+    //     })
+    //   }
+    // })
+    //
+    // //get previous period endpoint count
+    // await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
+    //   "index": "logs-*-tarion",
+    //   "gte": previousReportStartDate+"T00:01:00",
+    //   "lt": previousReportEndDate+"T23:59:00"
+    // }).then(async response => {
+    //   if (response.data) {
+    //     //set the endpoint count
+    //     await setDatasourceData(prevState => {
+    //       return {
+    //         ...prevState,
+    //         total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data.data.count)
+    //       }
+    //     })
+    //
+    //     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count/log",{
+    //       "index": "logs-*-tarion",
+    //       "gte": previousReportStartDate+"T00:01:00",
+    //       "lt": previousReportEndDate+"T23:59:00"
+    //     }).then(async response=>{
+    //       //set the log count
+    //       setDatasourceData(prevState => {
+    //         return {
+    //           ...prevState,
+    //           total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data.data.count)
+    //         }
+    //       })
+    //     })
+    //   }
+    // })
+
 
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getEndpointDatSourceDetails", {
       params: {
@@ -161,25 +226,11 @@ const ComponentDataSource = (props) => {
       }
     })
       .then(async response => {
-
         if (response.data) {
-
-        //get endpoint count from ES
-        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
-            "index": "logs-*-tarion",
-            "gte": reportStartDate+"T00:01:00",
-            "lt": reportEndDate+"T23:59:00"
-          }).then(async esResponse => {
-            if (esResponse.data.data.count) {
-              //set the endpoint count
-              response.data[0].endpointcount = esResponse.data.data.count
-            }
-          })
-
           await setDatasourceData(prevState => {
             return {...prevState, total_customer_endpoint_data: response.data}
           })
-
+          
           await setDatasourceData(prevState => {
             return {
               ...prevState,
@@ -206,21 +257,7 @@ const ComponentDataSource = (props) => {
             }
           })
             .then(async prevResponse => {
-
               if (prevResponse.data) {
-
-                //get endpoint count from ES
-                await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
-                  "index": "logs-*-tarion",
-                  "gte": previousReportStartDate+"T00:01:00",
-                  "lt": previousReportEndDate+"T23:59:00"
-                }).then(async esResponse => {
-                  if (esResponse.data.data.count) {
-                    //set the endpoint count
-                    prevResponse.data[0].endpointcount = esResponse.data.data.count
-                  }
-                })
-
                 await setDatasourceData(prevState => {
                   return {
                     ...prevState,
@@ -319,31 +356,18 @@ const ComponentDataSource = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(async response => {
-
-
+      .then(response => {
         if (response.data) {
-
-          //get edr count from ES for current report period http://10.3.22.37:4434/api/v1/edr/metrics/count
-          await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/edr/metrics/count",{
-            "index": "tarion-checkpointsba",
-            "gte": "2024-08-01T00:01:00",
-            "lt": "2024-08-31T23:59:00"
-          }).then(async  esResponse =>{
-            response.data[0].edrcount = esResponse.data.data.count
-          })
-
-          await setDatasourceData(prevState => {
+          setDatasourceData(prevState => {
             return {...prevState, total_customer_edr_data: response.data}
           })
-
-          await setDatasourceData(prevState => {
+          setDatasourceData(prevState => {
             return {
               ...prevState,
               total_customer_total_devices_count: parseInt(prevState.total_customer_total_devices_count) + parseInt(response.data[0].edrcount)
             }
           })
-          await setDatasourceData(prevState => {
+          setDatasourceData(prevState => {
             return {
               ...prevState,
               total_customer_total_devices_log_count: parseInt(prevState.total_customer_total_devices_log_count) + parseInt(response.data[0].totallogs)
@@ -354,32 +378,22 @@ const ComponentDataSource = (props) => {
          // const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
           //get previous month log count
-          await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRDataSourceDetails", {
+          axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRDataSourceDetails", {
             params: {
               customerId: customerId,
               startDate: previousReportStartDate,
               endDate: previousReportEndDate
             }
           })
-            .then(async prevResponse => {
+            .then(prevResponse => {
               if (prevResponse.data) {
-
-                //get edr count from ES for current report period http://10.3.22.37:4434/api/v1/edr/metrics/count
-                await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/edr/metrics/count",{
-                  "index": "tarion-checkpointsba",
-                  "gte": "2024-08-01T00:01:00",
-                  "lt": "2024-08-31T23:59:00"
-                }).then(async  esResponse =>{
-                  prevResponse.data[0].edrcount = esResponse.data.data.count
-                })
-
-                await setDatasourceData(prevState => {
+                setDatasourceData(prevState => {
                   return {
                     ...prevState,
                     total_customer_total_devices_count_prev: parseInt(prevState.total_customer_total_devices_count_prev) + parseInt(prevResponse.data[0].edrcount)
                   }
                 })
-                await setDatasourceData(prevState => {
+                setDatasourceData(prevState => {
                   return {
                     ...prevState,
                     total_customer_total_devices_log_count_prev: parseInt(prevState.total_customer_total_devices_log_count_prev) + parseInt(prevResponse.data[0].totallogs)
@@ -767,10 +781,10 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_second)} <span className="text-sm"> logs/s</span></h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_firewall_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span></h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -798,11 +812,11 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_second)} <span className="text-sm"> logs/s</span>
-                        </h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_server_log_ingestion_count_average_minute)} <span className="text-sm"> logs/m</span>*/}
+                      {/*  </h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -831,12 +845,12 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_second)}
-                          <span className="text-sm"> logs/s</span>
-                        </h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_edr_log_ingestion_count_average_minute)}*/}
+                      {/*    <span className="text-sm"> logs/m</span>*/}
+                      {/*  </h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -865,12 +879,12 @@ const ComponentDataSource = (props) => {
                       </div>
                     </div>
                     <div className="w-1/2 h-full flex-col items-center justify-center pl-1">
-                      <div className="h-full w-full flex items-center justify-center p-2 bg-white/10">
-                        <h1
-                          className="text-lg text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_second)}
-                          <span className="text-sm"> logs/s</span>
-                        </h1>
-                      </div>
+                      {/*<div className="h-full w-full flex items-center justify-center p-2 bg-white/10">*/}
+                      {/*  <h1*/}
+                      {/*    className="text-lg text-white">{formatNumber(dataManifestData.total_customer_nac_log_ingestion_count_average_minute)}*/}
+                      {/*    <span className="text-sm"> logs/m</span>*/}
+                      {/*  </h1>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                 </div>
@@ -911,9 +925,9 @@ const ComponentDataSource = (props) => {
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">Firewall
                       </div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2 capitalize">{firewall.vendor}</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{firewall.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{firewall.firewallcount} / XXX</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{firewall.firewallcount}</div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(firewall.totallogs)}</div>
                     </>
@@ -937,7 +951,7 @@ const ComponentDataSource = (props) => {
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{endpoint.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{endpoint.endpointcount}  / XXX</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{endpoint.endpointcount}</div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(endpoint.totallogs)}</div>
                     </>
@@ -961,7 +975,7 @@ const ComponentDataSource = (props) => {
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{edr.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{edr.edrcount}  / XXX</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{edr.edrcount}</div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(edr.totallogs)}</div>
                     </>
@@ -985,7 +999,7 @@ const ComponentDataSource = (props) => {
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{nac.vendor}</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{nac.naccount}  / XXX</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{nac.naccount}</div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(nac.totallogs)}</div>
                     </>
@@ -1010,7 +1024,7 @@ const ComponentDataSource = (props) => {
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">A2N Scan</div>
                       <div
-                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{datasourceData.total_customer_va_data.length}  / XXX</div>
+                        className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{datasourceData.total_customer_va_data.length}</div>
                       <div
                         className="col-span-2 row-span-1 bg-white/10 text-2xl flex items-center justify-center border-b-white border-b-2">{formatNumber(va.ivacount + va.evacount)}</div>
                     </>

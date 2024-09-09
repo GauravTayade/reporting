@@ -6,6 +6,8 @@ import {signIn, useSession} from "next-auth/react";
 import Swal from "sweetalert2";
 import {NextRequest} from "next/server";
 import {Spinner} from "@nextui-org/react";
+import Link from 'next/link';
+
 
 export default function Login(){
 
@@ -13,10 +15,6 @@ export default function Login(){
   const {data, status} = useSession()
   const { callbackUrl } = router.query;
   const [isLoading, setIsLoading] = useState(false);
-
-  // if(status === 'authenticated' && data.user){
-  //   router.push('/dashboard')
-  // }
 
   const [userObject,setUserObject] = useState({
     username:null,
@@ -67,6 +65,14 @@ export default function Login(){
       });
     }
     setIsLoading(false)
+  }
+
+  if(status === 'authenticated' && data.user){
+    if(callbackUrl){
+      router.push(callbackUrl)
+    }else {
+      router.push('/dashboard')
+    }
   }
 
   return(
@@ -149,9 +155,9 @@ export default function Login(){
 
           <p className="mt-10 text-center text-sm text-white">
             Not a member?{' '}
-            <a href="#" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
-              Please reach out to A2N support
-            </a>
+            <Link href="/register" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+              Register
+            </Link>
           </p>
         </div>
       </div>

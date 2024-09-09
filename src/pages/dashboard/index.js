@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {useEffect} from "react";
 import axios from "axios";
 import {useRouter} from "next/router";
@@ -14,7 +14,8 @@ import {
   DropdownMenu,
   DropdownItem,
   User,
-  Link
+  Link,
+  useDisclosure
 } from "@nextui-org/react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {
@@ -25,7 +26,10 @@ import {
   faMagnifyingGlassArrowRight, faEnvelopeCircleCheck
 } from "@fortawesome/free-solid-svg-icons";
 import {signOut, useSession} from "next-auth/react";
+import ComponentReportDelivered from "@/components/common/ComponentReportDelivered";
+import ComponentNavigation from "@/components/common/ComponentNavigation";
 
+const itemsPerPage = process.env.NEXT_PUBLIC_PAGE_LIMIT
 
 const Index = () => {
 
@@ -38,13 +42,13 @@ const Index = () => {
     "pdf","csv","excel"
   ])
   const [customerReportOccurance,setCustomerReportOccurance] = useState([
-    "monthly","biweekly","weekly","daily","custom"
+   "annually","quarterly","monthly","biweekly","weekly","daily"
   ])
+
+  const {isOpen,onOpen,onClose} = useDisclosure()
 
   //pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = process.env.NEXT_PUBLIC_PAGE_LIMIT
-  const [totalPage,setTotalPage] = useState(0)
   const [initialStart,setInitialStart] = useState(0)
 
   const [isDelivered, setIsDelivered] = useState(false);
@@ -57,17 +61,19 @@ const Index = () => {
   const [limit,setLimit] = useState(10);
   const [offset,setOffset] = useState(0);
 
+
   const getReports = async () => {
+
     await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/users/getCustomerReports", {
       params: {
         limit: 10,
         offset: 0
       }
     })
-      .then(response => {
+      .then(async response => {
         if (response.data.length > 0) {
-          setCustomerReportList(response.data)
-          setTotalPage(Math.ceil(customerReportList.length / itemsPerPage))
+          //await setTotalPage(Math.ceil(customerReportList.length / itemsPerPage))
+          await setCustomerReportList(response.data)
         }
       })
       .catch(error => {
@@ -92,8 +98,16 @@ const Index = () => {
     setInitialStart((Number(page) * Number(process.env.NEXT_PUBLIC_PAGE_LIMIT)) - process.env.NEXT_PUBLIC_PAGE_LIMIT)
   }
 
-  const handleViewButtonOnClick=(reportId)=>{
-    router.push('/report/'+reportId)
+  const handleViewButtonOnClick=async (reportId)=>{
+
+    //get report staus here to chekc if it has been delivered
+    const result  = await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/users/getCustomerReportDetails",{params:{reportId:reportId}})
+
+    if(result.data.length >0 && result.data[0].report_delivered ){
+      onOpen()
+    }else{
+      router.push('/report/'+reportId)
+    }
   }
 
   const handleIsReviewed=(e)=>{
@@ -227,16 +241,11 @@ const Index = () => {
     signOut()
   }
 
-
   useEffect(() => {
 
     try{
-      Promise.all([
-        getCustomers(),
+        getCustomers()
         getReports()
-      ]).then(result => {
-
-      })
     }
     catch(error){
       throw new Error(error)
@@ -246,59 +255,66 @@ const Index = () => {
 
   return (
       <div className="w-screen h-screen p-2 bg-blue-900">
+        <ComponentReportDelivered isOpen={isOpen} onClose={onClose}/>
         <div className="w-full h-full grid grid-cols-12 grid-rows-12">
           <div className="row-span-1 col-span-12">
-            <Navbar position="static" isBordered className="bg-white/10 text-white justify-evenly">
-              <NavbarContent justify="left">
-              <NavbarBrand>
-                <Image
-                  className="mx-auto h-10 w-auto"
-                  src="/assets/images/logo_header_a2n.png"
-                  alt="Access 2 Network INC"
-                  width={270}
-                  height={120}
-                />
-                {/*<p className="font-bold text-inherit">A2N</p>*/}
-              </NavbarBrand>
-              </NavbarContent>
-              <NavbarContent className="hidden sm:flex gap-4" justify="center">
-                <NavbarItem isActive>
-                  <Link  className="text-white uppercase" href="/dashboard" aria-current="page">
-                    Reports
-                  </Link>
-                </NavbarItem>
-                {data && data.user.role === 'admin' ?
-                  <>
-                  <NavbarItem>
-                    <Link  className="text-white uppercase" href="#" aria-current="page">
-                    Customers
-                    </Link>
-                  </NavbarItem>
-                  <NavbarItem>
-                    <Link className="text-white uppercase" href="#">
-                    Devices
-                    </Link>
-                  </NavbarItem>
-                  </>
-                  : ''}
-              </NavbarContent>
-              <NavbarContent justify="right">
-                <NavbarItem className="hidden lg:flex">
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <User className="text-white" name={data?data.user.name.toUpperCase() : ''} description={data?data.user.role:''} avatarProps={{src:"https://i.pinimg.com/564x/4e/22/be/4e22beef6d94640c45a1b15f4a158b23.jpg"}}/>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="profile action">
-                      <DropdownItem>Profile</DropdownItem>
-                      <DropdownItem onClick={handleLogout}>Logout</DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
-                </NavbarItem>
-              </NavbarContent>
-            </Navbar>
+            <ComponentNavigation/>
+            {/*<Navbar position="static" isBordered className="bg-white/10 text-white justify-evenly">*/}
+            {/*  <NavbarContent justify="left">*/}
+            {/*    <NavbarBrand>*/}
+            {/*      <Image*/}
+            {/*        className="mx-auto h-10 w-auto"*/}
+            {/*        src="/assets/images/logo_header_a2n.png"*/}
+            {/*        alt="Access 2 Network INC"*/}
+            {/*        width={270}*/}
+            {/*        height={120}*/}
+            {/*      />*/}
+            {/*      /!*<p className="font-bold text-inherit">A2N</p>*!/*/}
+            {/*    </NavbarBrand>*/}
+            {/*  </NavbarContent>*/}
+            {/*  <NavbarContent className="hidden sm:flex gap-4" justify="center">*/}
+            {/*    <NavbarItem isActive>*/}
+            {/*      <Link className="text-white uppercase" href="/dashboard" aria-current="page">*/}
+            {/*        Reports*/}
+            {/*      </Link>*/}
+            {/*    </NavbarItem>*/}
+            {/*    {data && data.user.role === 'admin' ?*/}
+            {/*      <>*/}
+            {/*        <NavbarItem>*/}
+            {/*          <Link className="text-white uppercase" href="/users">*/}
+            {/*            Employees*/}
+            {/*          </Link>*/}
+            {/*        </NavbarItem>*/}
+            {/*      <NavbarItem>*/}
+            {/*        <Link  className="text-white uppercase" href="#" aria-current="page">*/}
+            {/*        Customers*/}
+            {/*        </Link>*/}
+            {/*      </NavbarItem>*/}
+            {/*      <NavbarItem>*/}
+            {/*        <Link className="text-white uppercase" href="#">*/}
+            {/*        Devices*/}
+            {/*        </Link>*/}
+            {/*      </NavbarItem>*/}
+            {/*      </>*/}
+            {/*      : ''}*/}
+            {/*  </NavbarContent>*/}
+            {/*  <NavbarContent justify="right">*/}
+            {/*    <NavbarItem className="hidden lg:flex">*/}
+            {/*      <Dropdown>*/}
+            {/*        <DropdownTrigger>*/}
+            {/*          <User className="text-white" name={data?data.user.name.toUpperCase() : ''} description={data?data.user.role:''} avatarProps={{src:"https://i.pinimg.com/564x/4e/22/be/4e22beef6d94640c45a1b15f4a158b23.jpg"}}/>*/}
+            {/*        </DropdownTrigger>*/}
+            {/*        <DropdownMenu aria-label="profile action">*/}
+            {/*          <DropdownItem>Profile</DropdownItem>*/}
+            {/*          <DropdownItem onClick={handleLogout}>Logout</DropdownItem>*/}
+            {/*        </DropdownMenu>*/}
+            {/*      </Dropdown>*/}
+            {/*    </NavbarItem>*/}
+            {/*  </NavbarContent>*/}
+            {/*</Navbar>*/}
           </div>
           <div className="row-span-12 col-span-12">
-            <div className="w-full h-1/6 bg-white/20 p-1">
+            <div className="w-full h-1/6 p-1">
               <div className="w-full h-full flex">
                 <div className="w-1/12 h-full flex items-center justify-center">
                   <label htmlFor="isReviewed" className="text-white text-lg">Reviewed</label>
@@ -320,11 +336,11 @@ const Index = () => {
                   <Select aria-label="Client" onChange={(e) => handleClientSelect(e)}
                           labelPlacement="outside-left" placeholder="All" selectionMode="multiple"
                           className="max-w-xs">
-                    {customerList.map((customer) => (
+                    {customerList ? customerList.map((customer) => (
                       <SelectItem key={customer.id}>
                         {customer.name}
                       </SelectItem>
-                    ))}
+                    )) : ''}
                   </Select>
                 </div>
                 <div className="w-3/12 h-full flex items-center justify-center">
@@ -361,7 +377,48 @@ const Index = () => {
             </div>
             <div className="w-full h-5/6 p-1">
               <div className="w-full h-5/6">
-                <div className="w-full h-full bg-white/10 p-2">
+                <div className="w-full h-16 flex border-b-2">
+                  <div className="w-3/6 h-full"></div>
+                  <div className="w-3/6 h-full flex">
+                    <div className="w-1/6 h-full flex items-center justify-center">
+                    </div>
+                    <div className="w-1/6 h-full flex items-center justify-center">
+                    </div>
+                    <div className="w-1/6 h-full flex items-center justify-center border-r-2 border-white">
+                      <div className="w-2/6 h-full flex items-center justify-center">
+                        <FontAwesomeIcon className="text-xl text-red-500" icon={faHourglass}/>
+                      </div>
+                      <div className="w-4/6 h-full flex items-center justify-center">
+                        <p className="text-white capitalize">Pending</p>
+                      </div>
+                    </div>
+                    <div className="w-1/6 h-full flex items-center justify-center border-r-2 border-white">
+                      <div className="w-2/6 h-full flex items-center justify-center">
+                        <FontAwesomeIcon className="text-xl text-yellow-500" icon={faMagnifyingGlassArrowRight}/>
+                      </div>
+                      <div className="w-4/6 h-full flex items-center justify-center">
+                        <p className="text-white capitalize">Review Requested</p>
+                      </div>
+                    </div>
+                    <div className="w-1/6 h-full flex items-center justify-center border-r-2 border-white">
+                      <div className="w-2/6 h-full flex items-center justify-center">
+                        <FontAwesomeIcon className="text-xl text-yellow-500" icon={faMagnifyingGlassChart}/>
+                      </div>
+                      <div className="w-4/6 h-full flex items-center justify-center">
+                        <p className="text-white capitalize">Reviewed</p>
+                      </div>
+                    </div>
+                    <div className="w-1/6 h-full flex items-center justify-center">
+                      <div className="w-2/6 h-full flex items-center justify-center">
+                        <FontAwesomeIcon className="text-xl text-green-500" icon={faEnvelopeCircleCheck}/>
+                      </div>
+                      <div className="w-4/6 h-full flex items-center justify-center">
+                        <p className="text-white capitalize">Delivered</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-full h-full p-2">
                   <div className="w-full h-12 border-b border-b-white flex text-white">
                     <div className="w-1/12 h-12 flex items-center justify-center text-lg font-semibold uppercase">
                       #
@@ -391,11 +448,11 @@ const Index = () => {
                       Actions
                     </div>
                   </div>
-                  {customerReportList ? customerReportList.slice(initialStart,(currentPage * itemsPerPage)).map((report,index) =>{
+                  {customerReportList.length > 0 ? customerReportList.slice(initialStart,(currentPage * itemsPerPage)).map((report,index) =>{
                     return (
-                        <div className="w-full h-12 border-b border-b-white flex text-white" key={report.id}>
+                      <div className="w-full h-12 border-b border-b-white flex text-white" key={report.id}>
                         <div className="w-1/12 h-12 flex items-center justify-center text-lg">
-                          {index+1}
+                          {index + 1}
                         </div>
                         <div className="w-2/12 h-12 flex items-center justify-start text-lg">
                           {report.customer_name}
@@ -410,29 +467,28 @@ const Index = () => {
                           {report.report_description}
                         </div>
                         <div className="w-1/12 h-12 flex items-center justify-center text-lg">
-                          {report.report_delivered ? <FontAwesomeIcon className="text-xl text-green-500" icon={faEnvelopeCircleCheck}/> : ''}
-                          {report.report_review_requested ? <FontAwesomeIcon className="text-xl text-yellow-500" icon={faMagnifyingGlassArrowRight}/> : ''}
-                          {report.report_reviewed ? <FontAwesomeIcon className="text-xl text-yellow-500" icon={faMagnifyingGlassChart}/> : ''}
-                          {report.report_pending ? <FontAwesomeIcon className="text-xl text-red-500" icon={faHourglass}/> : ''}
+                          {report.report_delivered ?
+                            <FontAwesomeIcon className="text-xl text-green-500" icon={faEnvelopeCircleCheck}/> : ''}
+                          {report.report_review_requested ?
+                            <FontAwesomeIcon className="text-xl text-yellow-500" icon={faMagnifyingGlassArrowRight}/> : ''}
+                          {report.report_reviewed ?
+                            <FontAwesomeIcon className="text-xl text-yellow-500" icon={faMagnifyingGlassChart}/> : ''}
+                          {report.report_pending ?
+                            <FontAwesomeIcon className="text-xl text-red-500" icon={faHourglass}/> : ''}
                         </div>
                         <div className="w-1/12 h-12 flex items-center justify-center text-lg">
                           {new Date(report.start_date).toLocaleDateString("en-CA")}
                         </div>
                         <div className="w-1/12 h-12 flex items-center justify-center text-lg">
-                          {new Date(new Date().setDate(new Date(report.end_date).getDate() - 1)).toLocaleDateString("en-CA")}
+                          {new Date(new Date(report.end_date).setDate(0)).toLocaleDateString("en-CA")}
                         </div>
                         <div className="w-1/12 h-12 flex items-center justify-evenly text-lg">
-                          {/*<button onClick={()=>handleViewButtonOnClick('/report/'+ new Date(report.report_date).getFullYear()+'/'+(new Date(report.report_date).getMonth()+1).toString().padStart(2, '0')+'/' + report.customer_code)}><FontAwesomeIcon className="text-white text-xl" icon={faEye}/></button>*/}
-                          <button onClick={()=>handleViewButtonOnClick(report.report_id)}>
+                          <button onClick={() => handleViewButtonOnClick(report.report_id)}>
                             <FontAwesomeIcon className="text-white text-xl" icon={faEye}/>
                           </button>
-                          {/*<Link href={"/report/"+report.report_id} target="_blank">*/}
-                          {/*  <FontAwesomeIcon className="text-white text-xl" icon={faEye}/>*/}
-                          {/*</Link>*/}
-                          <FontAwesomeIcon title="Mark as reviewed" className="text-white text-xl" icon={faCheckCircle}/>
                         </div>
                       </div>
-                      )
+                    )
                     })
                     :
                     <div>
@@ -442,8 +498,8 @@ const Index = () => {
                 </div>
               </div>
               <div className="w-full h-1/6">
-                <div className="w-full h-full bg-white/10 p-2 flex items-center justify-end gap-1">
-                  <Pagination key="lg" total={totalPage} page={currentPage} initialPage={1} onChange={handlePageChange} size="lg" />
+                <div className="w-full h-full p-2 flex items-center justify-end gap-1">
+                  <Pagination key="lg" total={Math.ceil(customerReportList.length / itemsPerPage)} page={currentPage} initialPage={1} onChange={handlePageChange} size="lg" />
                 </div>
               </div>
             </div>

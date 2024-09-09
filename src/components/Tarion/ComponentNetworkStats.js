@@ -88,7 +88,7 @@ const ComponentNetworkStats = () =>{
       {
         "index":"firewall-checkpoint-tarion*",
         "gte":reportStartDate + "T00:01:00",
-        "lt":reportEndDate + "T00:01:00"
+        "lt":reportEndDate + "T23:59:00"
       })
       .then(async response=>{
         await setSourceIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
@@ -103,7 +103,7 @@ const ComponentNetworkStats = () =>{
       {
         "index":"firewall-checkpoint-tarion*",
         "gte":reportStartDate + "T00:01:00",
-        "lt":reportEndDate + "T00:01:00"
+        "lt":reportEndDate + "T23:59:00"
       })
       .then(async response=>{
         await setDestinationIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
@@ -134,7 +134,7 @@ const ComponentNetworkStats = () =>{
             <div className="w-full h-full flex items-center justify-center">
               <div className="w-full h-2/3 flex-col">
                 <h1 className="w-full text-4xl text-white text-right pr-5 border-b-gray-400 uppercase border-b">
-                  Network States
+                  Top Network States
                 </h1>
                 <h2 className="w-full h-1/3 text-sm text-white text-right pr-5 border-b-gray-400">
                   {reportStartDate} - {reportEndDate}

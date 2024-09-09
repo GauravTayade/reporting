@@ -170,20 +170,36 @@ const ComponentAnalyzingServer = (props) => {
   }
 
   const getUniqueServerCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
-      params: {
-        customerId: customerId,
-        startDate: reportStartDate,
-        endDate: reportEndDate
+
+    //get ServerCount from ES
+
+    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
+      "index": "logs-*-tarion",
+      "gte": reportStartDate+"T00:01:00",
+      "lt": reportEndDate+"T23:59:00"
+    }).then(async response => {
+      if (response.data.data.count) {
+        //set the endpoint count
+        setAnalyzingServer(prevState => {return{...prevState,total_server_subscription_count:response.data.data.count}})
       }
     })
-      .then(response => {
-        setAnalyzingServer(prevState => {return{...prevState,total_server_subscription_count:response.data[0].hostcount}})
-      })
-      .catch((error) => {
-        console.log(error)
-      })
+
+    // await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
+    //   params: {
+    //     customerId: customerId,
+    //     startDate: reportStartDate,
+    //     endDate: reportEndDate
+    //   }
+    // })
+    //   .then(response => {
+    //     setAnalyzingServer(prevState => {return{...prevState,total_server_subscription_count:response.data[0].hostcount}})
+    //   })
+    //   .catch((error) => {
+    //     console.log(error)
+    //   })
   }
+
+
 
   const getServerTotalLogIngestionCount = async () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalLogCount",{
@@ -489,7 +505,7 @@ const ComponentAnalyzingServer = (props) => {
     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/failed-host", {
       "index": "logs-*-tarion*,winlogbeat-tarion",
       "gte": reportStartDate+"T00:01:00",
-      "lt": reportEndDate+"T00:00:00"
+      "lt": reportEndDate+"T23:59:00"
     })
       .then(async response => {
         let target_host_name = []
@@ -512,7 +528,7 @@ const ComponentAnalyzingServer = (props) => {
     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host", {
       "index": "logs-*-tarion*",
       "gte": reportStartDate+"T00:01:00",
-      "lt": reportEndDate+"T00:00:00"
+      "lt": reportEndDate+"T23:59:00"
     })
       .then(async response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_unique_hosts_count: response.data.data.count}})
@@ -523,7 +539,7 @@ const ComponentAnalyzingServer = (props) => {
         await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host",{
           "index": "logs-*-tarion*",
           "gte": previousReportStartDate+"T00:01:00",
-          "lt": previousReportEndDate+"T00:00:00"
+          "lt": previousReportEndDate+"T23:59:00"
         })
           .then(async prevResponse=>{
             await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
@@ -543,7 +559,7 @@ const ComponentAnalyzingServer = (props) => {
     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
       "index": "logs-*-tarion*",
       "gte": reportStartDate+"T00:01:00",
-      "lt": reportEndDate+"T00:00:00"
+      "lt": reportEndDate+"T23:59:00"
     })
       .then(async response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_unique_username_count: response.data.data.count}})
@@ -553,7 +569,7 @@ const ComponentAnalyzingServer = (props) => {
         await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
           "index": "logs-*-tarion*",
           "gte": previousReportStartDate+"T00:01:00",
-          "lt": previousReportEndDate+"T00:00:00"
+          "lt": previousReportEndDate+"T23:59:00"
         })
           .then(async prevResponse => {
             await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
@@ -913,6 +929,7 @@ const ComponentAnalyzingServer = (props) => {
                     <h1 className="text-white text-3xl flex items-center justify-center border-b">
                       Top Target Hosts
                     </h1>
+                    <p className="w-full text-right"><small className="test-xs">(Failed authentications)</small></p>
                   </div>
                   <div className="h-5/6 w-full flex items-center justify-center">
                     <div className="w-2/6 h-full">

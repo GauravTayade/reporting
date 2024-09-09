@@ -268,12 +268,12 @@ const ComponentDataSource = (props) => {
 
     Promise.all([
       getCustomerFirewalls(),
-      // getCustomerEndpoints(),
-      // getCustomerEDR(),
-      // getCustomerNAC(),
-      // getCustomerVAScan(),
-      // getDevicesDifference(),
-      // getTotalLogsDifference()
+      getCustomerEndpoints(),
+      getCustomerEDR(),
+      getCustomerNAC(),
+      getCustomerVAScan(),
+      getDevicesDifference(),
+      getTotalLogsDifference()
     ])
       .then(async()=>{
         setResult(data)

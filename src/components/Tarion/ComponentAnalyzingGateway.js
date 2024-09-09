@@ -5,9 +5,9 @@ import {useContext, useEffect, useState} from "react";
 import axios from "axios";
 import userContext from "@/context/userContext";
 import {
-  chartBackgroundColorsListOpacity20,
-  chartBackgroundColorsList,
   chartBackgroundColorsListOpacity40,
+  chartBackgroundColorsList,
+  chartBackgroundColorsListOpacity60,
   formatNumber,
   getPercentageDifference,
   getNewDateRange, getAverageLogsPerDay, getAverageLogsPerMinuts
@@ -476,53 +476,115 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   const getTopExternalThreat = async () => {
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/threats/external/", {
-      "index": ".siem-signals*",
-      "gte":reportStartDate+"T00:01:00",
-      "lt":reportEndDate+"T00:00:00"
-    }).then(async response => {
-      const result = response.data.data.data.buckets.splice(0, 5)
 
-      //prepare data to external threats chart
-      data.top_external_threats = []
-      data.top_external_threats_count = []
+    //get data from postgressql
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getTopExternalThreat",{params:{
+        customerId:customerId,
+        startDate:reportStartDate,
+        endDate:reportEndDate
+      }})
+      .then(response=>{
+        if(response.data.length>0){
+          data.top_external_threats = []
+          data.top_external_threats_count= []
 
-      result.map(threat => {
-        data.top_external_threats.push(threat.key)
-        data.top_external_threats_count.push(threat.doc_count)
+          response.data.map(threat=>{
+            data.top_external_threats.push(threat.ip)
+            data.top_external_threats_count.push(threat.hitscount)
+          })
+
+          setPieExternalThreats(data.top_external_threats)
+          setPieExternalThreatsCount(data.top_external_threats_count)
+          setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_external_threat_data:response.data}})
+        }
+      })
+      .catch(errors=>{
+        console.log(errors)
       })
 
-      setPieExternalThreats(data.top_external_threats)
-      setPieExternalThreatsCount(data.top_external_threats_count)
-      setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_external_threat_data:result}})
-
-    }).catch(error => {
-      console.log(error)
-    })
+    // await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/threats/external/", {
+    //   "index": ".siem-signals*",
+    //   "gte":reportStartDate+"T00:01:00",
+    //   "lt":reportEndDate+"T00:00:00"
+    // }).then(async response => {
+    //   const result = response.data.data.data.buckets.splice(0, 5)
+    //
+    //   //prepare data to external threats chart
+    //   data.top_external_threats = []
+    //   data.top_external_threats_count = []
+    //
+    //   result.map(threat => {
+    //     data.top_external_threats.push(threat.key)
+    //     data.top_external_threats_count.push(threat.doc_count)
+    //   })
+    //
+    //   setPieExternalThreats(data.top_external_threats)
+    //   setPieExternalThreatsCount(data.top_external_threats_count)
+    //   setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_external_threat_data:result}})
+    //
+    // }).catch(error => {
+    //   console.log(error)
+    // })
   }
 
   const getIPSHitsAnalysis = async () => {
-    console.log("report start date",reportStartDate)
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/attack/list", {
-      "index": "firewall-checkpoint-tarion*",
-      "gte":reportStartDate+"T00:01:00",
-      "lt":reportEndDate+"T00:00:00"
+
+    //get Firewall list
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/firewall/getClientFirewallList',{
+      params:{
+        customerId:customerId
+      }
     })
-      .then(response => {
-        let top_ips_hits_analysis = []
-        const attackTypes = response.data.data.data.buckets.splice(0, 5)
-        attackTypes.map(attack => {
-          top_ips_hits_analysis.push({
-            source: attack.key[0],
-            destination: attack.key[1],
-            attackType: attack.key[2]
-          })
-        })
-        setIPsHitsAnalysis(top_ips_hits_analysis)
+      .then(async response=>{
+        if (response.data.length > 0){
+          let firewallList = new Set()
+          if (response.data) {
+            response.data.map(async (firewall) => {
+              await firewallList.add(firewall.id);
+            })
+          }
+          firewallList = [...firewallList].join(",")
+          console.log(firewallList)
+          //get attack types based on firewall
+          await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/firewall/getFirewallIPSHitsAnalysis',{params:{
+              firewallList:firewallList,
+              startDate: reportStartDate,
+              endDate: reportEndDate
+            }})
+            .then(response =>{
+              if(response.data.length > 0){
+                setIPsHitsAnalysis(response.data)
+              }
+            })
+            .catch(error=>{
+              console.log(error)
+            })
+        }
+    })
+      .catch(error=>{
+
       })
-      .catch(error => {
-        console.log(error)
-      })
+
+    // await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/attack/list", {
+    //   "index": "firewall-checkpoint-tarion*",
+    //   "gte":reportStartDate+"T00:01:00",
+    //   "lt":reportEndDate+"T00:00:00"
+    // })
+    //   .then(response => {
+    //     let top_ips_hits_analysis = []
+    //     const attackTypes = response.data.data.data.buckets.splice(0, 5)
+    //     attackTypes.map(attack => {
+    //       top_ips_hits_analysis.push({
+    //         source: attack.key[0],
+    //         destination: attack.key[1],
+    //         attackType: attack.key[2]
+    //       })
+    //     })
+    //     setIPsHitsAnalysis(top_ips_hits_analysis)
+    //   })
+    //   .catch(error => {
+    //     console.log(error)
+    //   })
   }
 
   useEffect(() => {
@@ -787,7 +849,7 @@ const ComponentAnalyzingGateway = (props) => {
                       {analyzingGatewayData.total_firewall_active_blade_count ?
                         analyzingGatewayData.total_firewall_active_blade_count.map((blade,index)=>{
                           return (
-                            <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
+                            <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity60[index]}}>
                               <div className="w-2/3 h-full flex items-center justify-center text-sm text-white">{blade.active_blade}</div>
                               <div className="w-1/3 h-full flex items-center justify-center text-sm text-white">{formatNumber(blade.bladecount)}</div>
                             </div>
@@ -814,15 +876,27 @@ const ComponentAnalyzingGateway = (props) => {
                       {analyzingGatewayData.total_firewall_external_threat_data ?
                         analyzingGatewayData.total_firewall_external_threat_data.map((threat,index)=> {
                           return (
-                            <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>
+                            <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity60[index]}}>
                               <div
-                                className="w-2/3 h-full flex items-center justify-center text-sm text-white">{threat.key}</div>
+                                className="w-2/3 h-full flex items-center justify-center text-sm text-white">{threat.ip}</div>
                               <div
-                                className="w-1/3 h-full flex items-center justify-center text-sm text-white">{formatNumber(threat.doc_count)}</div>
+                                className="w-1/3 h-full flex items-center justify-center text-sm text-white">{formatNumber(threat.hitscount)}</div>
                             </div>
                           )
                         })
                         : ''}
+                      {/*{analyzingGatewayData.total_firewall_external_threat_data ?*/}
+                      {/*  analyzingGatewayData.total_firewall_external_threat_data.map((threat,index)=> {*/}
+                      {/*    return (*/}
+                      {/*      <div key={index} className="w-full h-8 flex my-2 rounded-lg" style={{backgroundColor:chartBackgroundColorsListOpacity40[index]}}>*/}
+                      {/*        <div*/}
+                      {/*          className="w-2/3 h-full flex items-center justify-center text-sm text-white">{threat.key}</div>*/}
+                      {/*        <div*/}
+                      {/*          className="w-1/3 h-full flex items-center justify-center text-sm text-white">{formatNumber(threat.doc_count)}</div>*/}
+                      {/*      </div>*/}
+                      {/*    )*/}
+                      {/*  })*/}
+                      {/*  : ''}*/}
                     </div>
                     <div className="w-4/6 h-full flex items-center justify-center">
                       <ComponentPieChart backGroundColors={chartBackgroundColorsList} logdata={pieExternalThreatsCount} labels={pieExternalThreats}/>
@@ -833,34 +907,34 @@ const ComponentAnalyzingGateway = (props) => {
               <div className="col-span-4 row-span-6">
                 <div
                   className="w-full h-full p-2 flex-col items-center justify-center bg-white bg-opacity-5 rounded-lg">
-                  <div className="h-1/6 w-full  border-b-gray-400 border-b-2">
+                  <div className="h-12 w-full  border-b-gray-400 border-b-2">
                     <h1 className="text-white text-2xl flex items-center justify-center">
                       IPS Hits Analysis <small className="text-sm">(By Severity)</small>
                     </h1>
                   </div>
-                  <div className="h-5/6 w-full flex items-center justify-center">
+                  <div className="h-full w-full flex items-center justify-center">
                     <div className="h-full w-full">
-                      <div className="h-8 flex text-white">
+                      <div className="h-10 flex text-white">
                         <div
-                          className="h-8 w-1/3 flex items-center justify-center font-semibold uppercase border-b-2 border-b-gray-400">Source
+                          className="h-full w-1/3 flex items-center justify-center font-semibold uppercase border-b-gray-400">Source
                         </div>
                         <div
-                          className="h-8 w-1/3 flex items-center justify-center font-semibold uppercase border-b-2 border-b-gray-400">Destination
+                          className="h-full w-1/3 flex items-center justify-center font-semibold uppercase border-b-gray-400">Destination
                         </div>
                         <div
-                          className="h-8 w-1/3 flex items-center justify-center font-semibold uppercase border-b-2 border-b-gray-400 ">Type
+                          className="h-full w-1/3 flex items-center justify-center font-semibold uppercase border-b-gray-400 ">Type
                           of Attack
                         </div>
                       </div>
                       {ipsHitsAnalysis ?
-                        ipsHitsAnalysis.map((attack,index) => {
+                        ipsHitsAnalysis.slice(0,6).map((attack,index) => {
                           return (
-                            <div key={index} className="h-12 flex text-white border-b-2">
+                            <div key={index} className="h-12 flex text-white border-t-2">
                               <div
-                                className="h-12 bg-white/10 w-1/3 flex items-center justify-center mr-1">{attack.source}</div>
+                                className="h-12 w-1/3 flex items-center justify-center mr-1">{attack.src}</div>
                               <div
-                                className="h-12 bg-white/10 w-1/3 flex items-center justify-center mr-1">{attack.destination}</div>
-                              <div className="h-12 bg-white/10 w-1/3 text-center">{attack.attackType}</div>
+                                className="h-12 w-1/3 flex items-center justify-center mr-1">{attack.dest}</div>
+                              <div className="h-12 w-1/3 text-center">{attack.attack}</div>
                             </div>
                           )
                         })

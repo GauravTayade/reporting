@@ -38,7 +38,6 @@ const ComponentGlobalTrafficAnalysis = (props) => {
 
   //one state to store all results
   const [globalTrafficAnalysisData, setGlobalTrafficAnalysisData] = useState(initialValues);
-
   const [sourceTrafficData, setSourceTrafficData] = useState(null)
   const [destinationTrafficData, setDestinationTrafficData] = useState(null)
   const [totalIPSTrafficData, setTotalIPSTrafficData] = useState()
@@ -143,60 +142,6 @@ const ComponentGlobalTrafficAnalysis = (props) => {
       })
   }
 
-  const getFirewallUniqueSourceCountries = () => {
-    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/src", {
-      "index": "firewall-checkpoint-tarion*",
-      "gte": reportStartDate + "T00:01:00",
-      "lt": reportEndDate + "T00:01:00"
-    })
-      .then(async response => {
-
-        let srcCountryCount = 0
-
-        if (response.data) {
-          response.data.data.data.table.map(cont => {
-            srcCountryCount += parseInt(cont.country.buckets.length)
-          })
-        }
-
-        setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
-          return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_count: srcCountryCount}
-        })
-
-        //calculate new date range based on current date range difference.
-       // const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
-
-        //get previous month log count
-        const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/src", {
-          "index": "firewall-checkpoint-tarion*",
-          "gte": previousReportStartDate + "T00:01:00",
-          "lt": previousReportEndDate + "T00:01:00"
-        })
-          .then(async prevResponse => {
-
-            let prevSrcCountryCount = 0
-
-            if (prevResponse.data) {
-              prevResponse.data.data.data.table.map(cont => {
-                prevSrcCountryCount += parseInt(cont.country.buckets.length)
-              })
-            }
-
-            getPercentageDifference(srcCountryCount, prevSrcCountryCount).then(result => {
-              setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
-                return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_diff_percentage: result}
-              })
-            })
-          })
-          .catch(error => {
-            console.log(error)
-          })
-      })
-      .catch(error => {
-        console.log(error)
-      })
-  }
-
   const getFirewallUniqueDestinationIPs = () => {
     axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/dest/ip",
       {
@@ -235,61 +180,241 @@ const ComponentGlobalTrafficAnalysis = (props) => {
       })
   }
 
-  const getFirewallUniqueDestinationCountries = () => {
-    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/dest", {
-      "index": "firewall-checkpoint-tarion*",
-      "gte": reportStartDate + "T00:01:00",
-      "lt": reportEndDate + "T00:01:00"
+  // const getFirewallUniqueSourceCountries = () => {
+  //   axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/src", {
+  //     "index": "firewall-checkpoint-tarion*",
+  //     "gte": reportStartDate + "T00:01:00",
+  //     "lt": reportEndDate + "T00:01:00"
+  //   })
+  //     .then(async response => {
+  //
+  //       let srcCountryCount = 0
+  //
+  //       if (response.data) {
+  //         response.data.data.data.table.map(cont => {
+  //           srcCountryCount += parseInt(cont.country.buckets.length)
+  //         })
+  //       }
+  //
+  //       setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+  //         return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_count: srcCountryCount}
+  //       })
+  //
+  //       //calculate new date range based on current date range difference.
+  //      // const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+  //
+  //       //get previous month log count
+  //       const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/src", {
+  //         "index": "firewall-checkpoint-tarion*",
+  //         "gte": previousReportStartDate + "T00:01:00",
+  //         "lt": previousReportEndDate + "T00:01:00"
+  //       })
+  //         .then(async prevResponse => {
+  //
+  //           let prevSrcCountryCount = 0
+  //
+  //           if (prevResponse.data) {
+  //             prevResponse.data.data.data.table.map(cont => {
+  //               prevSrcCountryCount += parseInt(cont.country.buckets.length)
+  //             })
+  //           }
+  //
+  //           getPercentageDifference(srcCountryCount, prevSrcCountryCount).then(result => {
+  //             setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+  //               return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_diff_percentage: result}
+  //             })
+  //           })
+  //         })
+  //         .catch(error => {
+  //           console.log(error)
+  //         })
+  //     })
+  //     .catch(error => {
+  //       console.log(error)
+  //     })
+  // }
+  //
+  // const getFirewallUniqueDestinationCountries = () => {
+  //   axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/dest", {
+  //     "index": "firewall-checkpoint-tarion*",
+  //     "gte": reportStartDate + "T00:01:00",
+  //     "lt": reportEndDate + "T00:01:00"
+  //   })
+  //     .then(async response => {
+  //
+  //       let destCountryCount = 0
+  //
+  //       if (response.data) {
+  //         response.data.data.data.table.map(cont => {
+  //           destCountryCount += parseInt(cont.country.buckets.length)
+  //         })
+  //       }
+  //
+  //       setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+  //         return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_count: destCountryCount}
+  //       })
+  //
+  //       //setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {return {...prevGlobalTrafficAnalysisData,total_unique_dest_countries_count:response.data.data.count}})
+  //
+  //       //calculate new date range based on current date range difference.
+  //       //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
+  //
+  //       //get previous month log count
+  //       await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/dest", {
+  //         "index": "firewall-checkpoint-tarion*",
+  //         "gte": previousReportStartDate + "T00:01:00",
+  //         "lt": previousReportEndDate + "T00:01:00"
+  //       })
+  //         .then(async prevResponse => {
+  //
+  //           let prevDestCountryCount = 0
+  //
+  //           if (prevResponse.data) {
+  //             prevResponse.data.data.data.table.map(cont => {
+  //               prevDestCountryCount += parseInt(cont.country.buckets.length)
+  //             })
+  //           }
+  //
+  //           await getPercentageDifference(destCountryCount, prevDestCountryCount).then(result => {
+  //             setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+  //               return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_diff_percentage: result}
+  //             })
+  //           })
+  //
+  //           // getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
+  //           //   setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {return{...prevGlobalTrafficAnalysisData,total_unique_dest_countries_diff_percentage:result}})
+  //           // })
+  //         })
+  //         .catch(error => {
+  //
+  //         })
+  //
+  //     })
+  //     .catch(error => {
+  //       console.log(error)
+  //     })
+  // }
+
+  const getFirewallUniqueSourceCountries = async () => {
+
+    //get customer firewall id
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+      params: {
+        customerId: customerId,
+      }
     })
-      .then(async response => {
-
-        let destCountryCount = 0
-
+      .then(async (response) => {
+        let firewallList = new Set()
         if (response.data) {
-          response.data.data.data.table.map(cont => {
-            destCountryCount += parseInt(cont.country.buckets.length)
+          response.data.map(async (firewall) => {
+            await firewallList.add(firewall.id);
           })
         }
+        firewallList = [...firewallList].join(",")
 
-        setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
-          return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_count: destCountryCount}
+        //get unique source country count for current report period
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueSourceCountriesCount", {
+          params: {
+            cf_id: firewallList,
+            startDate: reportStartDate,
+            endDate: reportEndDate
+          }
         })
+          .then(async response => {
 
-        //setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {return {...prevGlobalTrafficAnalysisData,total_unique_dest_countries_count:response.data.data.count}})
+            let srcCountryCount = 0
 
-        //calculate new date range based on current date range difference.
-        //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
-
-        //get previous month log count
-        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/country/dest", {
-          "index": "firewall-checkpoint-tarion*",
-          "gte": previousReportStartDate + "T00:01:00",
-          "lt": previousReportEndDate + "T00:01:00"
-        })
-          .then(async prevResponse => {
-
-            let prevDestCountryCount = 0
-
-            if (prevResponse.data) {
-              prevResponse.data.data.data.table.map(cont => {
-                prevDestCountryCount += parseInt(cont.country.buckets.length)
-              })
+            if (response.data.length > 0) {
+              srcCountryCount = response.data[0].count
             }
 
-            await getPercentageDifference(destCountryCount, prevDestCountryCount).then(result => {
-              setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
-                return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_diff_percentage: result}
-              })
+            setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+              return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_count: response.data[0].count}
             })
 
-            // getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
-            //   setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {return{...prevGlobalTrafficAnalysisData,total_unique_dest_countries_diff_percentage:result}})
-            // })
+            //get source country count for previous report period
+            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueSourceCountriesCount", {
+              params: {
+                cf_id: firewallList,
+                startDate: previousReportStartDate,
+                endDate: previousReportEndDate
+              }
+            })
+              .then(async response => {
+
+               await getPercentageDifference(srcCountryCount, response.data[0].count).then(result => {
+                  setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+                    return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_diff_percentage: result}
+                  })
+                })
+              })
+              .catch(error => {
+              })
           })
           .catch(error => {
-
           })
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  }
 
+  const getFirewallUniqueDestinationCountries = async () => {
+    //get customer firewall id
+    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+      params: {
+        customerId: customerId,
+      }
+    })
+      .then(async (response) => {
+        let firewallList = new Set()
+        if (response.data) {
+          response.data.map(async (firewall) => {
+            await firewallList.add(firewall.id);
+          })
+        }
+        firewallList = [...firewallList].join(",")
+
+        //get unique source country count for current report period
+        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueDestinationCountriesCount", {
+          params: {
+            cf_id: firewallList,
+            startDate: reportStartDate,
+            endDate: reportEndDate
+          }
+        })
+          .then(async response => {
+
+            let destCountryCount = 0
+
+            if (response.data.length > 0) {
+              destCountryCount = response.data[0].count
+            }
+
+            setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+              return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_count: response.data[0].count}
+            })
+
+            //get source country count for previous report period
+            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueDestinationCountriesCount", {
+              params: {
+                cf_id: firewallList,
+                startDate: previousReportStartDate,
+                endDate: previousReportEndDate
+              }
+            })
+              .then(async response => {
+                await getPercentageDifference(destCountryCount, response.data[0].count).then(result => {
+                  setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
+                    return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_diff_percentage: result}
+                  })
+                })
+              })
+              .catch(error => {
+              })
+          })
+          .catch(error => {
+          })
       })
       .catch(error => {
         console.log(error)
@@ -441,13 +566,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {parseInt(globalTrafficAnalysisData.total_unique_IPS_diff_percentage) === 0 ?
+                      {parseFloat(globalTrafficAnalysisData.total_unique_IPS_diff_percentage) === 0 ?
                         <>
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
                         </>
                         :
-                        globalTrafficAnalysisData.total_unique_IPS_diff_percentage > 0 ?
+                        parseFloat(globalTrafficAnalysisData.total_unique_IPS_diff_percentage) > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -475,13 +600,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {parseInt(globalTrafficAnalysisData.total_unique_src_ip_diff_percentage) === 0 ?
+                      {parseFloat(globalTrafficAnalysisData.total_unique_src_ip_diff_percentage) === 0 ?
                           <>
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
                           </>
                           :
-                          parseInt(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) > 0 ?
+                          parseFloat(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) > 0 ?
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -509,13 +634,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {parseInt(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) === 0 ?
+                      {parseFloat(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) === 0 ?
                           <>
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
                           </>
                           :
-                          parseInt(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) > 0 ?
+                          parseFloat(globalTrafficAnalysisData.total_unique_src_countries_diff_percentage) > 0 ?
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -543,13 +668,13 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                     <div className="w-1/2 h-full flex items-center justify-center">
                     </div>
                     <div className="w-1/2 h-full flex items-center justify-center">
-                      {parseInt(globalTrafficAnalysisData.total_unique_dest_ip_diff_percentage) === 0 ?
+                      {parseFloat(globalTrafficAnalysisData.total_unique_dest_ip_diff_percentage) === 0 ?
                         <>
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
                         </>
                         :
-                        globalTrafficAnalysisData.total_unique_dest_ip_diff_percentage > 0 ?
+                        parseFloat(globalTrafficAnalysisData.total_unique_dest_ip_diff_percentage) > 0 ?
                           <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                           :
                           <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
@@ -585,7 +710,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>
                           </>
                           :
-                          parseInt(globalTrafficAnalysisData.total_unique_dest_countries_diff_percentage) > 0 ?
+                          parseFloat(globalTrafficAnalysisData.total_unique_dest_countries_diff_percentage) > 0 ?
                             <FontAwesomeIcon className="text-green-700 text-4xl" icon={faCaretUp}/>
                             :
                             <FontAwesomeIcon className="text-red-700 text-4xl" icon={faCaretDown}/>

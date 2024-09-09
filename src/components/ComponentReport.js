@@ -18,7 +18,10 @@ import {signOut, useSession} from "next-auth/react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import {useReactToPrint} from "react-to-print";
-import jsPDF from "jspdf";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faChevronDown, faDatabase, faUser} from "@fortawesome/free-solid-svg-icons";
+import ComponentNavigation from "@/components/common/ComponentNavigation";
+//import jsPDF from "jspdf";
 // import html2PDF from 'jspdf-html2canvas';
 
 const ComponentDataSource = dynamic(() => import("@/components/Tarion/ComponentDataSource"))
@@ -29,6 +32,7 @@ const ComponentNetworkStats = dynamic(() => import("@/components/Tarion/Componen
 const ComponentAnalyzingServer = dynamic(() => import("@/components/Tarion/ComponentAnalyzingServer"))
 const ComponentEndpointProtection = dynamic(() => import("@/components/Tarion/ComponentEndpointProtection"))
 const ComponentCustomerProfile = dynamic(()=>import("@/components/common/ComponentCustomerProfile"))
+const ComponentDateReservoir = dynamic(()=>import("@/components/Tarion/ComponentDateReservoir"))
 
 
 const ComponentReport = ()=>{
@@ -62,16 +66,17 @@ const ComponentReport = ()=>{
 
   //user and admin both can mark report for review
   const handleMarkForReview = async() =>{
-    console.log(reportContextData)
+
+    await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
+
     await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReadyReview',{
       report_id:reportContextData.reportId,
       employee_id:reportContextData.employeeId
     })
-      .then(response=>{
+      .then(async response=>{
         if(response.data && response.data.rowCount===1){
-
-          handleGetReportStatus()
-
+          await handleGetReportStatus()
+          await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
           Swal.fire({
             position: "top-end",
             icon: "success",
@@ -90,10 +95,11 @@ const ComponentReport = ()=>{
       report_id:reportContextData.reportId,
       employee_id:reportContextData.employeeId
     })
-      .then(response=>{
+      .then(async response=>{
         if(response.data && response.data.rowCount===1){
 
-          handleGetReportStatus()
+          await handleGetReportStatus()
+          await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_REVIEWED)
 
           Swal.fire({
             position: "top-end",
@@ -113,9 +119,10 @@ const ComponentReport = ()=>{
       report_id:reportContextData.reportId,
       employee_id:reportContextData.employeeId
     })
-      .then(response=>{
+      .then(async response=>{
 
-         handleGetReportStatus()
+         await handleGetReportStatus()
+         await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_DELIVERED)
 
         if(response.data && response.data.rowCount===1){
           Swal.fire({
@@ -137,6 +144,31 @@ const ComponentReport = ()=>{
     documentTitle: reportName,
     copyStyles: true,
   })
+
+  const handleSendNotificationMail =async(reportStatus)=>{
+
+    const reportId = reportContextData.reportId
+
+    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+'/mail',{
+      subject:'Report '+reportName+' status has changed to '+reportStatus,
+      to:['siem@a2n.net'],
+      html:`<html>
+                <head>
+                    <title></title>
+                </head>
+                <body>
+                    <p><b>Hi Team</b></p>
+                    <p>Status for report ${reportName} has been changes to ${reportStatus}</p>
+                    <p>Please visit report : <a href="${process.env.NEXT_PUBLIC_REPORT_URL}/${reportId}">Here</a></p>
+                    <p>Thank you, <br/> SIEM Team</p>
+                </body>
+           </html>`
+    }).then(response=>{
+      console.log(response)
+    }).catch(error=>{
+      console.log(error)
+    })
+  }
 
   // const handlePrint = async() =>{
   //   // const pdf = new jsPDF()
@@ -169,94 +201,112 @@ const ComponentReport = ()=>{
       <div className=" w-full h-full grid grid-rows-12 grid-cols-12">
         <div className="row-span-12 col-span-12 overflow-hidden">
           <div className="row-span-1 col-span-12">
-            <Navbar position="static" isBordered className="bg-white/10 text-white justify-evenly">
-              <NavbarContent justify="left">
-                <NavbarBrand>
-                  <Image
-                    className="mx-auto h-10 w-auto"
-                    src="/assets/images/logo_header_a2n.png"
-                    alt="Access 2 Network INC"
-                    width={270}
-                    height={120}
-                  />
-                  {/*<p className="font-bold text-inherit">A2N</p>*/}
-                </NavbarBrand>
-              </NavbarContent>
-              <NavbarContent className="hidden sm:flex gap-4" justify="center">
-                <NavbarItem isActive>
-                  <Link className="text-white uppercase" href="/dashboard" aria-current="page">
-                    Reports
-                  </Link>
-                </NavbarItem>
-                <NavbarItem isActive>
-                  {reportContextData.reportReviewed === true ?
-                  <Button color="secondary" className="text-white uppercase" onClick={handlePrint} href="#"
-                          aria-current="page">
-                    Print
-                  </Button>
-                    :
-                    ''
-                  }
-                </NavbarItem>
-                {/*{sessionData && sessionData.user.role === 'admin' ?*/}
-                {/*  <>*/}
-                {/*    <NavbarItem>*/}
-                {/*      <Link className="text-white uppercase" href="#" aria-current="page">*/}
-                {/*        Customers*/}
-                {/*      </Link>*/}
-                {/*    </NavbarItem>*/}
-                {/*    <NavbarItem>*/}
-                {/*      <Link className="text-white uppercase" href="#">*/}
-                {/*        Devices*/}
-                {/*      </Link>*/}
-                {/*    </NavbarItem>*/}
-                {/*  </>*/}
-                {/*  : ''}*/}
-                <NavbarItem>
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <Button color="primary">Status</Button>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="profile action">
-                      {sessionData && (sessionData.user.role === 'admin' || sessionData.user.role === 'user') && reportContextData.reportPending === true ?
-                        <DropdownItem onClick={handleMarkForReview}>Ready for Review</DropdownItem> : ''}
-                      {sessionData && sessionData.user.role === 'admin' && reportContextData.reportReadyReview === true ?
-                        <DropdownItem
-                          onClick={handleReviewed}>Reviewed</DropdownItem> : "Report is currently Under Review"}
-                      {sessionData && (sessionData.user.role === 'admin' || sessionData.user.role === 'user') && reportContextData.reportReviewed === true ?
-                        <DropdownItem onClick={handleMarkDelivered}>Delivered</DropdownItem> : "Report is Delivered"}
-                    </DropdownMenu>
-                  </Dropdown>
-                </NavbarItem>
-              </NavbarContent>
-              <NavbarContent justify="right">
-                <NavbarItem className="hidden lg:flex">
-                  <Dropdown>
-                    <DropdownTrigger>
-                      <User className="text-white"
-                            name={sessionData ? sessionData.user.name.toUpperCase() : ''}
-                            description={sessionData ? sessionData.user.role : ''}
-                            avatarProps={{src: "https://i.pinimg.com/564x/4e/22/be/4e22beef6d94640c45a1b15f4a158b23.jpg"}}/>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="profile action">
-                      <DropdownItem>Profile</DropdownItem>
-                      <DropdownItem onClick={handleLogout}>Logout</DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
-                </NavbarItem>
-              </NavbarContent>
-            </Navbar>
+            <ComponentNavigation/>
+            {/*<Navbar position="static" isBordered className="bg-white/10 text-white justify-evenly">*/}
+            {/*  <NavbarContent justify="left">*/}
+            {/*    <NavbarBrand>*/}
+            {/*      <Image*/}
+            {/*        className="mx-auto h-10 w-auto"*/}
+            {/*        src="/assets/images/logo_header_a2n.png"*/}
+            {/*        alt="Access 2 Network INC"*/}
+            {/*        width={270}*/}
+            {/*        height={120}*/}
+            {/*      />*/}
+            {/*    </NavbarBrand>*/}
+            {/*  </NavbarContent>*/}
+            {/*  <NavbarContent className="hidden sm:flex gap-4" justify="center">*/}
+            {/*    <NavbarItem>*/}
+            {/*      <Link className="text-white text-lg uppercase" href="/dashboard" aria-current="page">*/}
+            {/*        Dashboard*/}
+            {/*      </Link>*/}
+            {/*    </NavbarItem>*/}
+            {/*    <Dropdown>*/}
+            {/*      <NavbarItem>*/}
+            {/*        <DropdownTrigger>*/}
+            {/*          <Button className="p-0 text-lg uppercase text-white bg-transparent data-[hover=true]:bg-transparent" endContent={<FontAwesomeIcon icon={faChevronDown}/>} radius="sm" variant="light">Manage</Button>*/}
+            {/*        </DropdownTrigger>*/}
+            {/*      </NavbarItem>*/}
+            {/*      <DropdownMenu*/}
+            {/*        aria-label="ACME features"*/}
+            {/*        className="w-[340px]"*/}
+            {/*        itemClasses={{*/}
+            {/*          base: "gap-4",*/}
+            {/*        }}*/}
+            {/*      >*/}
+            {/*        <DropdownItem*/}
+            {/*          key="users"*/}
+            {/*          description="Manage user here"*/}
+            {/*          startContent={<FontAwesomeIcon className="text-lg text-gray-700" icon={faUser}/>}>*/}
+            {/*          <Link className="text-gray-700 capitalize" href="/users"> Users </Link>*/}
+            {/*        </DropdownItem>*/}
+            {/*        <DropdownItem*/}
+            {/*          key="devices"*/}
+            {/*          description="Manage customer devices"*/}
+            {/*          startContent={<FontAwesomeIcon className="text-lg text-gray-700" icon={faDatabase} />}>*/}
+            {/*          <Link className="text-gray-700 capitalize" href="/device"> Devices </Link>*/}
+            {/*        </DropdownItem>*/}
+            {/*      </DropdownMenu>*/}
+            {/*    </Dropdown>*/}
+            {/*    <NavbarItem isActive>*/}
+            {/*      {reportContextData.reportReviewed === true ?*/}
+            {/*      <Button color="secondary" className="text-white uppercase" onClick={handlePrint} href="#"*/}
+            {/*              aria-current="page">*/}
+            {/*        Print*/}
+            {/*      </Button>*/}
+            {/*        :*/}
+            {/*        ''*/}
+            {/*      }*/}
+            {/*    </NavbarItem>*/}
+            {/*    <NavbarItem>*/}
+            {/*      <Dropdown>*/}
+            {/*        <DropdownTrigger>*/}
+            {/*          <Button className="p-0 text-white text-lg uppercase bg-transparent data-[hover=true]:bg-transparent" endContent={<FontAwesomeIcon icon={faChevronDown}/>} radius="sm" variant="light">Status</Button>*/}
+            {/*        </DropdownTrigger>*/}
+            {/*        <DropdownMenu aria-label="profile action">*/}
+            {/*          {sessionData && (sessionData.user.role === 'admin' || sessionData.user.role === 'user') && reportContextData.reportPending === true ?*/}
+            {/*            <DropdownItem onClick={handleMarkForReview}>Ready for Review</DropdownItem> : ''}*/}
+            {/*          {sessionData && sessionData.user.role === 'admin' && reportContextData.reportReadyReview === true ?*/}
+            {/*            <DropdownItem*/}
+            {/*              onClick={handleReviewed}>Reviewed</DropdownItem> : "Report is currently Under Review"}*/}
+            {/*          {sessionData && (sessionData.user.role === 'admin' || sessionData.user.role === 'user') && reportContextData.reportReviewed === true ?*/}
+            {/*            <DropdownItem onClick={handleMarkDelivered}>Delivered</DropdownItem> : "Report is Delivered"}*/}
+            {/*        </DropdownMenu>*/}
+            {/*      </Dropdown>*/}
+            {/*    </NavbarItem>*/}
+            {/*  </NavbarContent>*/}
+            {/*  <NavbarContent justify="right">*/}
+            {/*    <NavbarItem className="hidden lg:flex">*/}
+            {/*      <Dropdown>*/}
+            {/*        <DropdownTrigger>*/}
+            {/*          <User className="text-white"*/}
+            {/*                name={sessionData ? sessionData.user.name.toUpperCase() : ''}*/}
+            {/*                description={sessionData ? sessionData.user.role : ''}*/}
+            {/*                avatarProps={{src: "https://i.pinimg.com/564x/4e/22/be/4e22beef6d94640c45a1b15f4a158b23.jpg"}}/>*/}
+            {/*        </DropdownTrigger>*/}
+            {/*        <DropdownMenu aria-label="profile action">*/}
+            {/*          <DropdownItem>*/}
+            {/*            <Link href="/users/profile" color="foreground">*/}
+            {/*              Profile*/}
+            {/*            </Link>*/}
+            {/*          </DropdownItem>*/}
+            {/*          <DropdownItem onClick={handleLogout}>Logout</DropdownItem>*/}
+            {/*        </DropdownMenu>*/}
+            {/*      </Dropdown>*/}
+            {/*    </NavbarItem>*/}
+            {/*  </NavbarContent>*/}
+            {/*</Navbar>*/}
           </div>
           <div ref={componentRef}
                className="w-full h-full overflow-y-scroll no-scrollbar row-span-11 col-span-12 bg-blue-900">
             {/*<ComponentCustomerProfile/>*/}
-            <ComponentDataSource/>
+            {/*<ComponentDataSource/>*/}
             {/*<ComponentDataManifest/> this component is no longer required*/}
             {/*<ComponentAnalyzingGateway/>*/}
             {/*<ComponentGlobalTrafficAnalysis/>*/}
             {/*<ComponentNetworkStats/>*/}
             {/*<ComponentAnalyzingServer/>*/}
             {/*<ComponentEndpointProtection/>*/}
+            <ComponentDateReservoir/>
             {/*<ComponentAdvisoryWatchDog/> this component is no longer required*/}
           </div>
         </div>

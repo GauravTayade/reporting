@@ -17,6 +17,6 @@ export default async function middleware(req){
 }
 
 export const config = {
-  matcher:['/dashboard/:path*','/report/:path*']
+  matcher:['/dashboard/:path*','/report/:path*','/users/:path*','/device/:path*','/profile/:path*']
 
 }

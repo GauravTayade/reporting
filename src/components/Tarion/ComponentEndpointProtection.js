@@ -145,6 +145,8 @@ const ComponentEndpointProtection = (props) => {
     setEndpointProtectionRecommendationList(endpointProtectionRecommendationList.filter((recommendation, index) => index !== indexRemove))
   }
 
+
+
   const getEDRDeviceTypes = async () => {
     let deviceTypesTemp = {}
     await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/endpoint/subscriptions", {
@@ -153,6 +155,12 @@ const ComponentEndpointProtection = (props) => {
       .then(response => {
         response.data.data.data.table.map(device => {
           deviceTypesTemp[device.key.replace(/\s/g, '')] = device.device_type_count.value
+        })
+
+        const result = Object.keys(deviceTypesTemp).filter(a=>a.includes('Mac'))
+        deviceTypesTemp['Mac'] = 0
+        result.forEach(device => {
+          deviceTypesTemp['Mac'] += parseInt(deviceTypesTemp[device])
         })
         setDeviceType(deviceTypesTemp)
       })
@@ -169,44 +177,54 @@ const ComponentEndpointProtection = (props) => {
         endDate: reportEndDate
       }
     })
-      .then(response => {
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_log_counts: response.data[0].logcount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_endpoints_subscription: response.data[0].edrcount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_trojan_detected: response.data[0].trojancount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_riskware_detected: response.data[0].riskwarecount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_malware_detected: response.data[0].malwarecount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_ransomware_detected: response.data[0].ransomwarecount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_phishing_detected: response.data[0].phishingcount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_url_filter_detected: response.data[0].urlfiltercount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_threat_extraction_count: response.data[0].threatextractioncount}
-        })
-        setEndpointProtectionData(prevState => {
-          return {...prevState, total_threat_emulation_count: response.data[0].threatemulationcount}
-        })
+      .then(async response => {
 
-        setEndpointProtectionData(prevState => {
-          return {
-            ...prevState,
-            total_threats_identified: parseInt(response.data[0].trojancount) + parseInt(response.data[0].urlfiltercount) + parseInt(response.data[0].malwarecount) + parseInt(response.data[0].riskwarecount)
-          }
-        })
+        if(response){
+          await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/edr/metrics/count",{
+            "index": "tarion-checkpointsba",
+            "gte": "2024-08-01T00:01:00",
+            "lt": "2024-08-31T23:59:00"
+          }).then(async  esResponse =>{
+            response.data[0].edrcount = esResponse.data.data.count
+          })
+
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_log_counts: response.data[0].logcount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_endpoints_subscription: response.data[0].edrcount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_trojan_detected: response.data[0].trojancount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_riskware_detected: response.data[0].riskwarecount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_malware_detected: response.data[0].malwarecount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_ransomware_detected: response.data[0].ransomwarecount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_phishing_detected: response.data[0].phishingcount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_url_filter_detected: response.data[0].urlfiltercount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_threat_extraction_count: response.data[0].threatextractioncount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {...prevState, total_threat_emulation_count: response.data[0].threatemulationcount}
+          })
+          await setEndpointProtectionData(prevState => {
+            return {
+              ...prevState,
+              total_threats_identified: parseInt(response.data[0].trojancount) + parseInt(response.data[0].urlfiltercount) + parseInt(response.data[0].malwarecount) + parseInt(response.data[0].riskwarecount)
+            }
+          })
+        }
       })
       .catch(error => {
         console.log(error)
@@ -357,7 +375,7 @@ const ComponentEndpointProtection = (props) => {
               <div className="w-full h-full flex">
                 <div className="w-1/3 h-full flex items-center justify-center">
                   <h1
-                    className="text-4xl text-yellow-500 font-bold">{deviceType && deviceType.hasOwnProperty('MacBookPro18,4') ? deviceType['MacBookPro18,4'] : 0}</h1>
+                    className="text-4xl text-yellow-500 font-bold">{deviceType && deviceType.hasOwnProperty('Mac')  ? deviceType['Mac']  : 0}</h1>
                 </div>
                 <div className="w-2/3 h-full flex-col">
                   <div className="w-full h-1/2 flex items-center border-b border-b-gray-300">

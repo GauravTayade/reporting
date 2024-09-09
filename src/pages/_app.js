@@ -19,13 +19,15 @@ export default function App({ Component, pageProps: {session , ...pageProps} }) 
 
   const [reportContextData,setReportContextData] = useState({...contextObject});
 
+  const getLayout = Component.getLayout ?? ((page) => page)
+
   return (
     <SessionProvider session={session}>
       <ReportContext.Provider value={{reportContextData,setReportContextData}}>
         <Head>
           <title>A2N Reporting Tool</title>
         </Head>
-        <Component {...pageProps} />
+        {getLayout( <Component {...pageProps} />)}
       </ReportContext.Provider>
     </SessionProvider>
   )
