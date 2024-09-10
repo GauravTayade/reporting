@@ -56,8 +56,8 @@ const ComponentEndpointProtection = (props) => {
 
   const {data:sessionData,status} = useSession()
 
-  const getEndpointRecommendation =async ()=>{
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
+  const getEndpointRecommendation =()=>{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
       params:{
         crId:reportId,
         category:'endpoint'
@@ -147,9 +147,9 @@ const ComponentEndpointProtection = (props) => {
 
 
 
-  const getEDRDeviceTypes = async () => {
+  const getEDRDeviceTypes = () => {
     let deviceTypesTemp = {}
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/endpoint/subscriptions", {
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/endpoint/subscriptions", {
       "index": "tarion-checkpointsba"
     })
       .then(response => {
@@ -169,18 +169,18 @@ const ComponentEndpointProtection = (props) => {
       })
   }
 
-  const getEDRMetricsData = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRMetricsData", {
+  const getEDRMetricsData = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRMetricsData", {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
 
         if(response){
-          await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/edr/metrics/count",{
+          axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/edr/metrics/count",{
             "index": "tarion-checkpointsba",
             "gte": "2024-08-01T00:01:00",
             "lt": "2024-08-31T23:59:00"
@@ -188,37 +188,37 @@ const ComponentEndpointProtection = (props) => {
             response.data[0].edrcount = esResponse.data.data.count
           })
 
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_log_counts: response.data[0].logcount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_endpoints_subscription: response.data[0].edrcount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_trojan_detected: response.data[0].trojancount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_riskware_detected: response.data[0].riskwarecount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_malware_detected: response.data[0].malwarecount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_ransomware_detected: response.data[0].ransomwarecount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_phishing_detected: response.data[0].phishingcount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_url_filter_detected: response.data[0].urlfiltercount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_threat_extraction_count: response.data[0].threatextractioncount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {...prevState, total_threat_emulation_count: response.data[0].threatemulationcount}
           })
-          await setEndpointProtectionData(prevState => {
+          setEndpointProtectionData(prevState => {
             return {
               ...prevState,
               total_threats_identified: parseInt(response.data[0].trojancount) + parseInt(response.data[0].urlfiltercount) + parseInt(response.data[0].malwarecount) + parseInt(response.data[0].riskwarecount)
@@ -231,8 +231,8 @@ const ComponentEndpointProtection = (props) => {
       })
   }
 
-  const getEDRPermittedMetricsData = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRMPermittedMtricsData", {
+  const getEDRPermittedMetricsData = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/edr/getEDRMPermittedMtricsData", {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
@@ -279,17 +279,10 @@ const ComponentEndpointProtection = (props) => {
 
   useEffect(() => {
 
-    Promise.all([
-      getEDRMetricsData(),
-      getEDRDeviceTypes(),
-      getEDRPermittedMetricsData(),
-      getEndpointRecommendation()
-    ])
-      .then(() => {
-      })
-      .catch((error) => {
-        console.log(error)
-      })
+    getEDRMetricsData()
+    getEDRDeviceTypes()
+    getEDRPermittedMetricsData()
+    getEndpointRecommendation()
 
   }, [reportContextData]);
 

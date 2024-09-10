@@ -55,20 +55,20 @@ const ComponentGlobalTrafficAnalysis = (props) => {
       params: {
         customerId: customerId,
       }
-    }).then(async response => {
+    }).then(response => {
 
       let customerFirewallList = []
-      await response.data.map(firewall => {
+      response.data.map(firewall => {
         customerFirewallList.push(firewall.id)
       })
 
-      await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallIPSTrafficCount", {
+      axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallIPSTrafficCount", {
         params: {
           firewallId: customerFirewallList.join(""),
           startDate: reportStartDate,
           endDate: reportEndDate
         }
-      }).then(async response => {
+      }).then(response => {
         setGlobalTrafficAnalysisData(globalTrafficAnalysisData => {
           return {
             ...globalTrafficAnalysisData,
@@ -80,7 +80,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallIPSTrafficCount", {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallIPSTrafficCount", {
           params: {
             firewallId: customerFirewallList.join(""),
             startDate: previousReportStartDate,
@@ -114,7 +114,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         "gte": reportStartDate + "T00:01:00",
         "lt": reportEndDate + "T00:01:00"
       })
-      .then(async response => {
+      .then(response => {
 
         setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
           return {...prevGlobalTrafficAnalysisData, total_unique_src_ip_count: response.data.data.count}
@@ -123,12 +123,12 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
-        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/src/ip", {
+        axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/src/ip", {
           "index": "firewall-checkpoint-tarion*",
           "gte": previousReportStartDate + "T00:01:00",
           "lt": previousReportEndDate + "T00:01:00"
         })
-          .then(async prevResponse => {
+          .then(prevResponse => {
             getPercentageDifference(response.data.data.count, prevResponse.data.data.count).then(result => {
               setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
                 return {...prevGlobalTrafficAnalysisData, total_unique_src_ip_diff_percentage: result}
@@ -149,7 +149,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         "gte": reportStartDate + "T00:01:00",
         "lt": reportEndDate + "T00:01:00"
       })
-      .then(async response => {
+      .then(response => {
         setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
           return {...prevGlobalTrafficAnalysisData, total_unique_dest_ip_count: response.data.data.count}
         })
@@ -158,7 +158,7 @@ const ComponentGlobalTrafficAnalysis = (props) => {
         //const prevDateRange = getNewDateRange(reportStartDate, reportEndDate)
 
         //get previous month log count
-        const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/dest/ip", {
+        axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL + "/firewall/geo/unique/dest/ip", {
           "index": "firewall-checkpoint-tarion*",
           "gte": previousReportStartDate + "T00:01:00",
           "lt": previousReportEndDate + "T00:01:00"
@@ -295,32 +295,32 @@ const ComponentGlobalTrafficAnalysis = (props) => {
   //     })
   // }
 
-  const getFirewallUniqueSourceCountries = async () => {
+  const getFirewallUniqueSourceCountries = () => {
 
     //get customer firewall id
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId,
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
-          response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+          response.data.map((firewall) => {
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
 
         //get unique source country count for current report period
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueSourceCountriesCount", {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueSourceCountriesCount", {
           params: {
             cf_id: firewallList,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
         })
-          .then(async response => {
+          .then(response => {
 
             let srcCountryCount = 0
 
@@ -333,25 +333,27 @@ const ComponentGlobalTrafficAnalysis = (props) => {
             })
 
             //get source country count for previous report period
-            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueSourceCountriesCount", {
+            axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueSourceCountriesCount", {
               params: {
                 cf_id: firewallList,
                 startDate: previousReportStartDate,
                 endDate: previousReportEndDate
               }
             })
-              .then(async response => {
+              .then(response => {
 
-               await getPercentageDifference(srcCountryCount, response.data[0].count).then(result => {
+               getPercentageDifference(srcCountryCount, response.data[0].count).then(result => {
                   setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
                     return {...prevGlobalTrafficAnalysisData, total_unique_src_countries_diff_percentage: result}
                   })
                 })
               })
               .catch(error => {
+                console.log(error)
               })
           })
           .catch(error => {
+            console.log(error)
           })
       })
       .catch(error => {
@@ -359,31 +361,31 @@ const ComponentGlobalTrafficAnalysis = (props) => {
       })
   }
 
-  const getFirewallUniqueDestinationCountries = async () => {
+  const getFirewallUniqueDestinationCountries = () => {
     //get customer firewall id
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId,
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
           response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
 
         //get unique source country count for current report period
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueDestinationCountriesCount", {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueDestinationCountriesCount", {
           params: {
             cf_id: firewallList,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
         })
-          .then(async response => {
+          .then(response => {
 
             let destCountryCount = 0
 
@@ -396,24 +398,26 @@ const ComponentGlobalTrafficAnalysis = (props) => {
             })
 
             //get source country count for previous report period
-            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueDestinationCountriesCount", {
+            axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getUniqueDestinationCountriesCount", {
               params: {
                 cf_id: firewallList,
                 startDate: previousReportStartDate,
                 endDate: previousReportEndDate
               }
             })
-              .then(async response => {
-                await getPercentageDifference(destCountryCount, response.data[0].count).then(result => {
+              .then(response => {
+                getPercentageDifference(destCountryCount, response.data[0].count).then(result => {
                   setGlobalTrafficAnalysisData(prevGlobalTrafficAnalysisData => {
                     return {...prevGlobalTrafficAnalysisData, total_unique_dest_countries_diff_percentage: result}
                   })
                 })
               })
               .catch(error => {
+                console.log(error)
               })
           })
           .catch(error => {
+            console.log(error)
           })
       })
       .catch(error => {

@@ -18,8 +18,7 @@ import {useSession} from "next-auth/react";
 
 const ComponentAnalyzingGateway = (props) => {
 
-  //get user context data
-  //const userDataContext = useContext(userContext)
+
   const {reportContextData, setReportContextData} = useContext(ReportContext)
 
   const {data:sessionData,status} = useSession()
@@ -75,10 +74,9 @@ const ComponentAnalyzingGateway = (props) => {
     top_external_threats_data:[]
   }
 
-  const getGatewayRecommendation =async ()=>{
+  const getGatewayRecommendation =()=>{
 
-    console.log("report id",reportId)
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
       params:{
         crId:reportId,
         category:'gateway'
@@ -165,8 +163,8 @@ const ComponentAnalyzingGateway = (props) => {
     setGatewayRecommendationList(gatewayRecommendationList.filter((recommendation, index) => index !== indexRemove))
   }
 
-  const getFirewallSubscriptionCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallCount', {
+  const getFirewallSubscriptionCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallCount', {
       params: {
         customerId: customerId,
       }
@@ -179,15 +177,15 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getFirewallTotalLogIngestion = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
+  const getFirewallTotalLogIngestion = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count:response.data[0].logcount}})
 
         getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
@@ -201,16 +199,16 @@ const ComponentAnalyzingGateway = (props) => {
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
           params: {
             customerId: customerId,
             startDate: previousReportStartDate,
             endDate: previousReportEndDate
           }
         })
-          .then(async prevResponse => {
+          .then(prevResponse => {
             //get percentage diff and set it to result
-            await getPercentageDifference(response.data[0].logcount,prevResponse.data[0].logcount).then(result=>{
+            getPercentageDifference(response.data[0].logcount,prevResponse.data[0].logcount).then(result=>{
               setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_ingestion_count_diff_percentage: result}})
             })
           })
@@ -223,44 +221,44 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getFirewallTotalAllowedLogIngestion = async () => {
+  const getFirewallTotalAllowedLogIngestion = () => {
 
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
           response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
           params: {
             firewallId: firewallList,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
         })
-          .then(async response => {
+          .then(response => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_allowed_count: response.data[0].allowedtraffic}})
 
             //calculate new date range based on current date range difference.
             //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
             //get previous month log count
-            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
+            axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAllowedTrafficCount', {
               params: {
                 firewallId: firewallList,
                 startDate: previousReportStartDate,
                 endDate: previousReportEndDate
               }
             })
-              .then(async prevResponse => {
+              .then(prevResponse => {
                 //get percentage diff and set it to result
-                await getPercentageDifference(response.data[0].allowedtraffic,prevResponse.data[0].allowedtraffic).then(result=>{
+                getPercentageDifference(response.data[0].allowedtraffic,prevResponse.data[0].allowedtraffic).then(result=>{
                   setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_allowed_count_dff_percentage: result}})
                 })
               })
@@ -274,22 +272,22 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getFirewallTotalDeniedLogIngestion = async () => {
+  const getFirewallTotalDeniedLogIngestion = () => {
 
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
           response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
           params: {
             firewallId: firewallList,
             interval: 30,
@@ -297,13 +295,13 @@ const ComponentAnalyzingGateway = (props) => {
             endDate: reportEndDate
           }
         })
-          .then(async response => {
+          .then(response => {
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_denied_count:response.data[0].deniedtraffic}})
             //calculate new date range based on current date range difference.
             //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
-            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
+            axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallDeniedTrafficCount', {
               params: {
                 firewallId: firewallList,
                 interval: 30,
@@ -311,9 +309,9 @@ const ComponentAnalyzingGateway = (props) => {
                 endDate: previousReportEndDate
               }
             })
-              .then(async prevResponse => {
+              .then(prevResponse => {
                 //get percentage diff and set it to result
-                await getPercentageDifference(response.data[0].deniedtraffic,prevResponse.data[0].deniedtraffic).then(result=>{
+                getPercentageDifference(response.data[0].deniedtraffic,prevResponse.data[0].deniedtraffic).then(result=>{
                   setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_denied_count_diff_percentage: result}})
                 })
               })
@@ -327,29 +325,29 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getFirewallTotalIPSTrafficLogIngestion = async () => {
+  const getFirewallTotalIPSTrafficLogIngestion =  () => {
 
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
           response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
           params: {
             firewallId: firewallList,
             startDate: reportStartDate,
             endDate: reportEndDate
           }
         })
-          .then(async response => {
+          .then(response => {
 
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_IPS_count:response.data[0].ipstrafficcount}})
 
@@ -357,16 +355,16 @@ const ComponentAnalyzingGateway = (props) => {
             //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
-            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
+            axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallIPSTrafficCount', {
               params: {
                 firewallId: firewallList,
                 startDate: previousReportStartDate,
                 endDate: previousReportEndDate
               }
             })
-              .then(async prevResponse => {
+              .then(prevResponse => {
                 //get percentage diff and set it to result
-                await getPercentageDifference(response.data[0].ipstrafficcount,prevResponse.data[0].ipstrafficcount).then(result=>{
+                getPercentageDifference(response.data[0].ipstrafficcount,prevResponse.data[0].ipstrafficcount).then(result=>{
                   setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_IPS_count_diff_percentage: result}})
                 })
               })
@@ -380,29 +378,29 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getFirewallAdminActivitiesLogIngestion = async () => {
+  const getFirewallAdminActivitiesLogIngestion = () => {
 
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId,
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
-          response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+          response.data.map((firewall) => {
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
           params: {
             firewallId: firewallList,
             startDate : reportStartDate,
             endDate : reportEndDate
           }
         })
-          .then(async response => {
+          .then(response => {
 
             setAnalyzingGatewayData(prevState => {return{...prevState,total_firewall_log_admin_activities_count: response.data[0].adminactivitylogcount}})
 
@@ -410,7 +408,7 @@ const ComponentAnalyzingGateway = (props) => {
             //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
 
             //get previous month log count
-            await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
+            axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallAdminActivitiesLogCount', {
               params: {
                 firewallId: firewallList,
                 startDate: previousReportStartDate,
@@ -432,21 +430,21 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getFirewallActiveBlades = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
+  const getFirewallActiveBlades = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getClientFirewallList", {
       params: {
         customerId: customerId,
       }
     })
-      .then(async (response) => {
+      .then((response) => {
         let firewallList = new Set()
         if (response.data) {
-          response.data.map(async (firewall) => {
-            await firewallList.add(firewall.id);
+          response.data.map((firewall) => {
+            firewallList.add(firewall.id);
           })
         }
         firewallList = [...firewallList].join(",")
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallActiveBladeCount", {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/firewall/getFirewallActiveBladeCount", {
           params: {
             firewallId: firewallList,
             startDate: reportStartDate,
@@ -473,10 +471,10 @@ const ComponentAnalyzingGateway = (props) => {
       })
   }
 
-  const getTopExternalThreat = async () => {
+  const getTopExternalThreat = () => {
 
     //get data from postgressql
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getTopExternalThreat",{params:{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getTopExternalThreat",{params:{
         customerId:customerId,
         startDate:reportStartDate,
         endDate:reportEndDate
@@ -525,26 +523,26 @@ const ComponentAnalyzingGateway = (props) => {
     // })
   }
 
-  const getIPSHitsAnalysis = async () => {
+  const getIPSHitsAnalysis = () => {
 
     //get Firewall list
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/firewall/getClientFirewallList',{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/firewall/getClientFirewallList',{
       params:{
         customerId:customerId
       }
     })
-      .then(async response=>{
+      .then(response=>{
         if (response.data.length > 0){
           let firewallList = new Set()
           if (response.data) {
             response.data.map(async (firewall) => {
-              await firewallList.add(firewall.id);
+              firewallList.add(firewall.id);
             })
           }
           firewallList = [...firewallList].join(",")
-          console.log(firewallList)
+
           //get attack types based on firewall
-          await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/firewall/getFirewallIPSHitsAnalysis',{params:{
+          axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/firewall/getFirewallIPSHitsAnalysis',{params:{
               firewallList:firewallList,
               startDate: reportStartDate,
               endDate: reportEndDate
@@ -586,20 +584,17 @@ const ComponentAnalyzingGateway = (props) => {
   }
 
   useEffect(() => {
-    Promise.all([
-      getFirewallSubscriptionCount(),
-      getFirewallTotalLogIngestion(),
-      getFirewallTotalAllowedLogIngestion(),
-      getFirewallTotalDeniedLogIngestion(),
-      getFirewallTotalIPSTrafficLogIngestion(),
-      getFirewallAdminActivitiesLogIngestion(),
-      getFirewallActiveBlades(),
-      getTopExternalThreat(),
-      getIPSHitsAnalysis(),
-      getGatewayRecommendation()
-    ]).then(() => {
 
-    })
+      getFirewallSubscriptionCount()
+      getFirewallTotalLogIngestion()
+      getFirewallTotalAllowedLogIngestion()
+      getFirewallTotalDeniedLogIngestion()
+      getFirewallTotalIPSTrafficLogIngestion()
+      getFirewallAdminActivitiesLogIngestion()
+      getFirewallActiveBlades()
+      getTopExternalThreat()
+      getIPSHitsAnalysis()
+      getGatewayRecommendation()
 
   }, [reportContextData]);
 

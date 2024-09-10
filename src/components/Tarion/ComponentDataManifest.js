@@ -59,8 +59,8 @@ const ComponentDataManifest = (props) => {
 
 
   //get unique Firewalls count for a customer
-  const getUniqueFirewallCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallCount', {
+  const getUniqueFirewallCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallCount', {
       params:
         {
           customerId: customerId,
@@ -77,8 +77,8 @@ const ComponentDataManifest = (props) => {
   }
 
   //get unique Endpoint count for a customer
-  const getUniqueServerCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
+  const getUniqueServerCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
@@ -93,8 +93,8 @@ const ComponentDataManifest = (props) => {
   }
 
   //get unique EDR count for a customer
-  const getUniqueEDRCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/edr/getEDRCount', {
+  const getUniqueEDRCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/edr/getEDRCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
@@ -110,8 +110,8 @@ const ComponentDataManifest = (props) => {
   }
 
   //get unique NAC count for a customer
-  const getUniqueNACCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/nac/getNACCount', {
+  const getUniqueNACCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/nac/getNACCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
@@ -127,27 +127,27 @@ const ComponentDataManifest = (props) => {
   }
 
   //get count of total logs ingested by customer Firewalls
-  const getFirewallTotalLogIngestion = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
+  const getFirewallTotalLogIngestion = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/firewall/getFirewallTotalLogCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count: response.data[0].logcount}})
         setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
 
-        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_day: result}})
         })
 
-        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_minute: result}})
         })
 
-        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_firewall_log_ingestion_count_average_second: result}})
         })
 
@@ -158,27 +158,27 @@ const ComponentDataManifest = (props) => {
   }
 
   //get count of total logs ingested by customer Endpoints
-  const getServerTotalLogIngestion = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointTotalLogCount', {
+  const getServerTotalLogIngestion = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointTotalLogCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count: response.data[0].logcount}})
         setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
 
-        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_day: result}})
         })
 
-        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_minute: result}})
         })
 
-        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_server_log_ingestion_count_average_second: result}})
         })
 
@@ -189,27 +189,27 @@ const ComponentDataManifest = (props) => {
   }
 
   //get count of total logs ingested by customer EDR
-  const getEDRTotalLogIngestion = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/edr/getEDRLogcount', {
+  const getEDRTotalLogIngestion = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/edr/getEDRLogcount', {
       params: {
         customerId: customerId,
         startDate:reportStartDate,
         endDate:reportEndDate
       }})
-      .then(async response => {
+      .then(response => {
         setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count:response.data[0].logcount}})
         setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
 
-        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_day: result}})
         })
 
-        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           console.log(result)
           setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_minute: result}})
         })
 
-        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_edr_log_ingestion_count_average_second: result}})
         })
 
@@ -220,27 +220,27 @@ const ComponentDataManifest = (props) => {
   }
 
   //get count of total logs ingested by customer NAC
-  const getNACTotalLogIngestion = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/nac/getNACLogIngestionCount', {
+  const getNACTotalLogIngestion = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/nac/getNACLogIngestionCount', {
       params: {
         customerId: customerId,
         startDate:reportStartDate,
         endDate:reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count:response.data[0].logcount}})
         setTotalLogCount(prevState => {return{...prevState,logCount:parseInt(prevState.logCount)+parseInt(response.data[0].logcount)}})
 
-        await getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerDay(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_day: result}})
         })
 
-        await getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerMinuts(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_minute: result}})
         })
 
-        await getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
+        getAverageLogsPerSeconds(reportStartDate,reportEndDate,response.data[0].logcount).then(result=>{
           setDataManifestData(prevState => {return{...prevState,total_customer_nac_log_ingestion_count_average_second: result}})
         })
 
@@ -253,18 +253,15 @@ const ComponentDataManifest = (props) => {
   useEffect(() => {
     setDataManifestData(initialValues)
     setTotalLogCount(logCountInitialValues)
-    Promise.all([
-      getUniqueFirewallCount(),
-      getUniqueServerCount(),
-      getUniqueEDRCount(),
-      getUniqueNACCount(),
-      getFirewallTotalLogIngestion(),
-      getServerTotalLogIngestion(),
-      getEDRTotalLogIngestion(),
-      getNACTotalLogIngestion(),
-    ]).then(() => {
 
-    })
+    getUniqueFirewallCount()
+    getUniqueServerCount()
+    getUniqueEDRCount()
+    getUniqueNACCount()
+    getFirewallTotalLogIngestion()
+    getServerTotalLogIngestion()
+    getEDRTotalLogIngestion()
+    getNACTotalLogIngestion()
 
   }, [])
 
@@ -275,6 +272,7 @@ const ComponentDataManifest = (props) => {
     let ednpointLogPercentage = getPercentage(dataManifestData.total_customer_server_log_ingestion_count,totalLogCount.logCount)
     let edrLogPercentage = getPercentage(dataManifestData.total_customer_edr_log_ingestion_count,totalLogCount.logCount)
     let nacLogPercentage = getPercentage(dataManifestData.total_customer_nac_log_ingestion_count,totalLogCount.logCount)
+
     setDataManifestData(prevState=>{return{...prevState,total_customer_firewall_log_ingestion_count_percentage: firewallLogPercentage}})
     setDataManifestData(prevState=>{return{...prevState,total_customer_server_log_ingestion_count_percentage: ednpointLogPercentage}})
     setDataManifestData(prevState=>{return{...prevState,total_customer_edr_log_ingestion_count_percentage: edrLogPercentage}})

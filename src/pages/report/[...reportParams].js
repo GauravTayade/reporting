@@ -63,21 +63,6 @@ export default function Report() {
             selectedCustomer: customer
           })
 
-          //add other report related data to context api
-          // userDataContext.reportId = response.data[0].report_id
-          // userDataContext.reportStartDate = new Date(response.data[0].report_date).toLocaleDateString("en-CA")
-          // userDataContext.reportStartDate = new Date(response.data[0].report_start_date).toLocaleDateString("en-CA")
-          // userDataContext.reportEndDate = new Date(response.data[0].report_end_date).toLocaleDateString("en-CA")
-          // userDataContext.previousReportStartDate = new Date(new Date(response.data[0].report_start_date).setMonth(new Date(response.data[0].report_start_date).getMonth() - 1)).toLocaleDateString("en-CA")
-          // userDataContext.previousReportEndDate = new Date(new Date(new Date(response.data[0].report_start_date).setMonth(new Date(response.data[0].report_start_date).getMonth())).setDate(0)).toLocaleDateString("en-CA")
-          //
-          // //add selected customer to api context selected customer array
-          // userDataContext.selectedCustomer.push({
-          //   customerName:response.data[0].customer_name,
-          //   customerId: response.data[0].customer_id,
-          //   customerCode: response.data[0].customer_code
-          // })
-
         }else{
           router.push('/404')
         }

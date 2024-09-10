@@ -1,10 +1,9 @@
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {useRouter} from "next/router";
 import UserContext from "@/context/userContext";
 import {useContext} from "react";
 import {signIn, useSession} from "next-auth/react";
 import Swal from "sweetalert2";
-import {NextRequest} from "next/server";
 import {Spinner} from "@nextui-org/react";
 import Link from 'next/link';
 
@@ -32,40 +31,43 @@ export default function Login(){
   const userLogin = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    try {
-      const result = await signIn("credentials", {
-        username: userObject.username,
-        password: userObject.password,
-        redirect: false,
-        //callbackUrl: callbackUrl ? callbackUrl : '/dashboard'
-        callbackUrl: '/dashboard'
-      })
+    if ((userObject.username !== null || userObject.username !== '') && (userObject.password !== null || userObject.password !== '')) {
+      try {
+        const result = await signIn("credentials", {
+          username: userObject.username,
+          password: userObject.password,
+          redirect: false,
+          //callbackUrl: callbackUrl ? callbackUrl : '/dashboard'
+          callbackUrl: '/dashboard'
+        })
 
-      if (result?.error) {
+        if (result?.error) {
+          Swal.fire({
+            position: "top-end",
+            icon: "error",
+            title: "Invalid Credentials",
+            showConfirmButton: false,
+            timer: 2000
+          });
+        } else {
+          // Redirect to the callback URL or handle success
+          setIsLoading(false)
+          await router.push(callbackUrl ? callbackUrl : '/dashboard')
+        }
+
+      } catch (error) {
         Swal.fire({
           position: "top-end",
           icon: "error",
-          title: "Invalid Credentials",
+          title: error,
           showConfirmButton: false,
           timer: 2000
         });
-      } else {
-        // Redirect to the callback URL or handle success
-        setIsLoading(false)
-        await router.push(callbackUrl ? callbackUrl : '/dashboard')
       }
-
-    } catch (error) {
-      Swal.fire({
-        position: "top-end",
-        icon: "error",
-        title: error,
-        showConfirmButton: false,
-        timer: 2000
-      });
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
+
 
   if(status === 'authenticated' && data.user){
     if(callbackUrl){

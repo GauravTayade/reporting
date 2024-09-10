@@ -18,8 +18,9 @@ import ReportContext from "@/context/ReportContext";
 import axios from "axios";
 import Swal from "sweetalert2";
 import {usePathname} from "next/navigation";
+import {useReactToPrint} from "react-to-print";
 
-const ComponentNavigation =()=> {
+const ComponentNavigation =(props)=> {
 
   const {data :sessionData,status} = useSession()
 
@@ -27,8 +28,41 @@ const ComponentNavigation =()=> {
 
   const {reportContextData, setReportContextData} = useContext(ReportContext)
 
+  const reportName = reportContextData.selectedCustomer.length > 0? reportContextData.selectedCustomer[0].customerName+ " "+reportContextData.reportStartDate+" "+reportContextData.reportEndDate: ''
+
+  const handlePrint = useReactToPrint({
+    content: () => props.printRef.current,
+    documentTitle: reportName,
+    copyStyles: true,
+  })
+
   const handleLogout = () =>{
     signOut()
+  }
+
+  const handleSendNotificationMail =async(reportStatus)=>{
+
+    const reportId = reportContextData.reportId
+
+    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+'/mail',{
+      subject:'Report '+reportName+' status has changed to '+reportStatus,
+      to:['siem@a2n.net'],
+      html:`<html>
+                <head>
+                    <title></title>
+                </head>
+                <body>
+                    <p><b>Hi Team</b></p>
+                    <p>Status for report ${reportName} has been changes to ${reportStatus}</p>
+                    <p>Please visit report : <a href="${process.env.NEXT_PUBLIC_REPORT_URL}/${reportId}">Here</a></p>
+                    <p>Thank you, <br/> SIEM Team</p>
+                </body>
+           </html>`
+    }).then(response=>{
+      console.log(response)
+    }).catch(error=>{
+      console.log(error)
+    })
   }
 
   const handleGetReportStatus = async() =>{

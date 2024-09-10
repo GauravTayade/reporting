@@ -16,8 +16,6 @@ import {useSession} from "next-auth/react";
 
 const ComponentAnalyzingServer = (props) => {
 
-  //get user context data
-  //const userDataContext = useContext(userContext)
   const {reportContextData, setReportContextData} = useContext(ReportContext)
   //get userContext data to get customerId
   const customerId = reportContextData.selectedCustomer.length > 0 ? reportContextData.selectedCustomer[0].customerId : null
@@ -81,8 +79,8 @@ const ComponentAnalyzingServer = (props) => {
     top_target_hosts: 0, //find-top-failed-authentication-target-hosts
   }
 
-  const getServerRecommendation =async ()=>{
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
+  const getServerRecommendation =()=>{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/edr/getEndpointRecommendation",{
       params:{
         crId:reportId,
         category:'server'
@@ -169,11 +167,11 @@ const ComponentAnalyzingServer = (props) => {
     setServerRecommendationList(serverRecommendationList.filter((recommendation, index) => index !== indexRemove))
   }
 
-  const getUniqueServerCount = async () => {
+  const getUniqueServerCount = () => {
 
     //get ServerCount from ES
 
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/metrics/count",{
       "index": "logs-*-tarion",
       "gte": reportStartDate+"T00:01:00",
       "lt": reportEndDate+"T23:59:00"
@@ -201,7 +199,7 @@ const ComponentAnalyzingServer = (props) => {
 
 
 
-  const getServerTotalLogIngestionCount = async () =>{
+  const getServerTotalLogIngestionCount = () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalLogCount",{
       params:{customerId: customerId,startDate:reportStartDate,endDate:reportEndDate}
     })
@@ -222,30 +220,31 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  const getTotalAuthenticationCount = async () => {
+  const getTotalAuthenticationCount = () => {
 
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointAuthenticationCount', {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointAuthenticationCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_authentication_count: response.data[0].totalauthenticationcount}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointAuthenticationCount",{
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointAuthenticationCount",{
           params:{
             customerId: customerId,
             startDate:previousReportStartDate,
             endDate:previousReportEndDate
           }
         })
-          .then(async prevResponse=>{
-            await getPercentageDifference(response.data[0].totalauthenticationcount,prevResponse.data[0].totalauthenticationcount).then(result=>{
+          .then(prevResponse=>{
+            getPercentageDifference(response.data[0].totalauthenticationcount,prevResponse.data[0].totalauthenticationcount).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_authentication_count_diff_percentage: result}})
             })
           })
@@ -260,29 +259,30 @@ const ComponentAnalyzingServer = (props) => {
 
   }
 
-  const getFailedAuthenticationCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointTotalFailedAuthenticationCount', {
+  const getFailedAuthenticationCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointTotalFailedAuthenticationCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_failed_authentication_count: response.data[0].totalfailedauthentication}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
+
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalFailedAuthenticationCount",{
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointTotalFailedAuthenticationCount",{
           params:{
             customerId: customerId,
             startDate:previousReportStartDate,
             endDate:previousReportEndDate
           }
         })
-          .then(async prevResponse=>{
-            await getPercentageDifference(response.data[0].totalfailedauthentication,prevResponse.data[0].totalfailedauthentication).then(result=>{
+          .then(prevResponse=>{
+          getPercentageDifference(response.data[0].totalfailedauthentication,prevResponse.data[0].totalfailedauthentication).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_failed_authentication_count_diff_percentage: result}})
             })
           })
@@ -295,28 +295,28 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  const getTotalRegistryChangesCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointRegistryChangesCount', {
+  const getTotalRegistryChangesCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointRegistryChangesCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer((prevState=>{return{...prevState,total_server_registry_changes_count:response.data[0].totalregistrychangecount}}))
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointRegistryChangesCount",{
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/endpoint/getEndpointRegistryChangesCount",{
           params:{
             customerId: customerId,
             startDate:previousReportStartDate,
             endDate:previousReportEndDate
           }
         })
-          .then(async prevResponse=>{
-            await getPercentageDifference(response.data[0].totalregistrychangecount,prevResponse.data[0].totalregistrychangecount).then(result=>{
+          .then(prevResponse=>{
+            getPercentageDifference(response.data[0].totalregistrychangecount,prevResponse.data[0].totalregistrychangecount).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_registry_changes_count_diff_percentage: result}})
             })
           })
@@ -330,29 +330,29 @@ const ComponentAnalyzingServer = (props) => {
 
   }
 
-  const getTotalServiceCreationCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
+  const getTotalServiceCreationCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
        setAnalyzingServer(prevState => {return{...prevState,total_server_service_creation_count: response.data[0].totalservicecreationcount}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointServiceCreationCount', {
           params: {
             customerId: customerId,
             startDate: previousReportStartDate,
             endDate: previousReportEndDate
           }
         })
-          .then(async prevResponse => {
-            await getPercentageDifference(response.data[0].totalservicecreationcount,prevResponse.data[0].totalservicecreationcount).then(result=>{
+          .then(prevResponse => {
+            getPercentageDifference(response.data[0].totalservicecreationcount,prevResponse.data[0].totalservicecreationcount).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_service_creation_count_diff_percentage: result}})
             })
           })
@@ -366,29 +366,29 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  const getTotalProcessCreationCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getEndpointProcessCreationCount", {
+  const getTotalProcessCreationCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getEndpointProcessCreationCount", {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_process_creation_count:response.data[0].totalprocesscreationcount}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointProcessCreationCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointProcessCreationCount', {
           params: {
             customerId: customerId,
             startDate: previousReportStartDate,
             endDate: previousReportEndDate
           }
         })
-          .then(async prevResponse => {
-            await getPercentageDifference(response.data[0].totalprocesscreationcount,prevResponse.data[0].totalprocesscreationcount).then(result=>{
+          .then(prevResponse => {
+            getPercentageDifference(response.data[0].totalprocesscreationcount,prevResponse.data[0].totalprocesscreationcount).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_process_creation_count_diff_percentage: result}})
             })
           })
@@ -403,29 +403,29 @@ const ComponentAnalyzingServer = (props) => {
 
   }
 
-  const getTotalPolicyChangesCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
+  const getTotalPolicyChangesCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_policy_changes_count: response.data[0].totalpolicychangescount}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointPolicyChangesCount', {
           params: {
             customerId: customerId,
             startDate: previousReportStartDate,
             endDate: previousReportEndDate
           }
         })
-          .then(async prevResponse => {
-            await getPercentageDifference(response.data[0].totalpolicychangescount,prevResponse.data[0].totalpolicychangescount).then(result=>{
+          .then(prevResponse => {
+            getPercentageDifference(response.data[0].totalpolicychangescount,prevResponse.data[0].totalpolicychangescount).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_policy_changes_count_diff_percentage: result}})
             })
           })
@@ -439,28 +439,28 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  const getTotalFileCreationCount = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
+  const getTotalFileCreationCount = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
       params: {
         customerId: customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_file_creation_count:response.data[0].totalfilecreationcount}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
+        axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/endpoint/getEndpointFileCreationCount', {
           params: {
             customerId: customerId,
             startDate: previousReportStartDate,
             endDate: previousReportEndDate
           }
         })
-          .then(async prevResponse => {
+          .then(prevResponse => {
             getPercentageDifference(response.data[0].totalfilecreationcount,prevResponse.data[0].totalfilecreationcount).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_file_creation_count_diff_percentage: result}})
             })
@@ -476,7 +476,7 @@ const ComponentAnalyzingServer = (props) => {
 
   }
 
-  const getMostActiveServers = async () => {
+  const getMostActiveServers = () => {
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/endpoint/getMostEndpointMostActiveServerList", {
       params: {
         customerId: customerId,
@@ -501,13 +501,13 @@ const ComponentAnalyzingServer = (props) => {
 
   }
 
-  const getTopTargetHosts = async () => {
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/failed-host", {
+  const getTopTargetHosts = () => {
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/failed-host", {
       "index": "logs-*-tarion*,winlogbeat-tarion",
       "gte": reportStartDate+"T00:01:00",
       "lt": reportEndDate+"T23:59:00"
     })
-      .then(async response => {
+      .then(response => {
         let target_host_name = []
         let target_host_record_count = []
         const hostsList = response.data.data.data.table
@@ -524,25 +524,25 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  const getUniqueTotalTargetHosts = async () => {
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host", {
+  const getUniqueTotalTargetHosts = () => {
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host", {
       "index": "logs-*-tarion*",
       "gte": reportStartDate+"T00:01:00",
       "lt": reportEndDate+"T23:59:00"
     })
-      .then(async response => {
+      .then(response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_unique_hosts_count: response.data.data.count}})
 
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host",{
+        axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/host",{
           "index": "logs-*-tarion*",
           "gte": previousReportStartDate+"T00:01:00",
           "lt": previousReportEndDate+"T23:59:00"
         })
-          .then(async prevResponse=>{
-            await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
+          .then(prevResponse=>{
+            getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_unique_hosts_count_diff_percentage: result}})
             })
           })
@@ -555,24 +555,24 @@ const ComponentAnalyzingServer = (props) => {
       })
   }
 
-  const getUniqueTotalTargetUsernames = async () => {
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
+  const getUniqueTotalTargetUsernames = () => {
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
       "index": "logs-*-tarion*",
       "gte": reportStartDate+"T00:01:00",
       "lt": reportEndDate+"T23:59:00"
     })
-      .then(async response => {
+      .then( response => {
         setAnalyzingServer(prevState => {return{...prevState,total_server_unique_username_count: response.data.data.count}})
         //calculate new date range based on current date range difference.
         //const prevDateRange = getNewDateRange(reportStartDate,reportEndDate)
         //get previous month log count
-        await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
+        axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/endpoint/auth/count/username", {
           "index": "logs-*-tarion*",
           "gte": previousReportStartDate+"T00:01:00",
           "lt": previousReportEndDate+"T23:59:00"
         })
-          .then(async prevResponse => {
-            await getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
+          .then(prevResponse => {
+             getPercentageDifference(response.data.data.count,prevResponse.data.data.count).then(result=>{
               setAnalyzingServer(prevState => {return{...prevState,total_server_unique_username_count_diff_percentage:result}})
             })
           })
@@ -587,24 +587,22 @@ const ComponentAnalyzingServer = (props) => {
   }
 
   useEffect(() => {
-    Promise.all([
-      getUniqueServerCount(),
-      getServerTotalLogIngestionCount(),
-      getTotalAuthenticationCount(),
-      getFailedAuthenticationCount(),
-      getTotalRegistryChangesCount(),
-      getTotalServiceCreationCount(),
-      getTotalProcessCreationCount(),
-      getTotalPolicyChangesCount(),
-      getTotalFileCreationCount(),
-      getMostActiveServers(),
-      getTopTargetHosts(),
-      getUniqueTotalTargetHosts(),
-      getUniqueTotalTargetUsernames(),
-      getServerRecommendation()
-    ]).then(() => {
 
-    })
+      getUniqueServerCount()
+      getServerTotalLogIngestionCount()
+      getTotalAuthenticationCount()
+      getFailedAuthenticationCount()
+      getTotalRegistryChangesCount()
+      getTotalServiceCreationCount()
+      getTotalProcessCreationCount()
+      getTotalPolicyChangesCount()
+      getTotalFileCreationCount()
+      getMostActiveServers()
+      getTopTargetHosts()
+      getUniqueTotalTargetHosts()
+      getUniqueTotalTargetUsernames()
+      getServerRecommendation()
+
   }, [reportContextData])
 
   return (
