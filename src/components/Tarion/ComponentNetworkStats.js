@@ -27,7 +27,7 @@ const ComponentNetworkStats = () =>{
 
 
   //get firewall top network protocols
-  const getFirewallTopNetworkProtocols =async()=>{
+  const getFirewallTopNetworkProtocols =()=>{
 
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
@@ -35,9 +35,9 @@ const ComponentNetworkStats = () =>{
         startDate: reportStartDate,
         endDate: reportEndDate
       }
-    }).then(async response=>{
+    }).then(response=>{
       let customerFirewallList = []
-      await response.data.map( firewall=>{
+      response.data.map( firewall=>{
         customerFirewallList.push(firewall.id)
       })
       axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getFirewallTopNetworkProtocols",{
@@ -56,16 +56,16 @@ const ComponentNetworkStats = () =>{
   }
 
   //get firewall top network rules
-  const getFirewallTopNetworkRules = async () =>{
+  const getFirewallTopNetworkRules = () =>{
     axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getClientFirewallList",{
       params:{
         customerId:customerId,
         startDate: reportStartDate,
         endDate: reportEndDate
       }
-    }).then(async response=>{
+    }).then(response=>{
       let customerFirewallList = []
-      await response.data.map( firewall=>{
+      response.data.map( firewall=>{
         customerFirewallList.push(firewall.id)
       })
       axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+"/firewall/getFirewallTopNetworkRules",{
@@ -83,30 +83,30 @@ const ComponentNetworkStats = () =>{
     })
   }
 
-  const getFirewallUniqueSourceIPs = async () => {
-    const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/geo/unique/src/ip",
+  const getFirewallUniqueSourceIPs = () => {
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/geo/unique/src/ip",
       {
         "index":"firewall-checkpoint-tarion*",
         "gte":reportStartDate + "T00:01:00",
         "lt":reportEndDate + "T23:59:00"
       })
-      .then(async response=>{
-        await setSourceIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
+      .then(response=>{
+        setSourceIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
       })
       .catch(error=>{
         console.log(error)
       })
   }
 
-  const getFirewallUniqueDestinationIPs = async () => {
-    const result = await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/geo/unique/dest/ip",
+  const getFirewallUniqueDestinationIPs = () => {
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+"/firewall/geo/unique/dest/ip",
       {
         "index":"firewall-checkpoint-tarion*",
         "gte":reportStartDate + "T00:01:00",
         "lt":reportEndDate + "T23:59:00"
       })
-      .then(async response=>{
-        await setDestinationIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
+      .then(response=>{
+        setDestinationIP({"count":response.data.data.count,"ipList":response.data.data.data.table})
       })
       .catch(error=>{
         console.log(error)
@@ -114,12 +114,12 @@ const ComponentNetworkStats = () =>{
   }
 
   useEffect(() => {
-    Promise.all([
-      getFirewallTopNetworkRules(),
-      getFirewallTopNetworkProtocols(),
-      getFirewallUniqueSourceIPs(),
-      getFirewallUniqueDestinationIPs()
-    ])
+
+    getFirewallTopNetworkRules()
+    getFirewallTopNetworkProtocols()
+    getFirewallUniqueSourceIPs()
+    getFirewallUniqueDestinationIPs()
+
   }, [reportContextData]);
 
   return(

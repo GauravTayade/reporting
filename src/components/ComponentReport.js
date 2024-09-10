@@ -38,137 +38,7 @@ const ComponentDateReservoir = dynamic(()=>import("@/components/Tarion/Component
 const ComponentReport = ()=>{
 
   const {data:sessionData,status} = useSession()
-  const {reportContextData, setReportContextData} = useContext(ReportContext)
   const componentRef = useRef(null)
-
-  const handleLogout = () =>{
-    signOut()
-  }
-
-  const handleGetReportStatus = async() =>{
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportStatus',{params:{
-        reportId : reportContextData.reportId
-      }})
-      .then(response => {
-        if(response.data){
-          setReportContextData(prevData => {return{...prevData,
-            reportPending: response.data[0].report_pending ? response.data[0].report_pending : null,
-            reportReadyReview: response.data[0].report_review_requested ? response.data[0].report_review_requested : null,
-            reportReviewed: response.data[0].report_reviewed ? response.data[0].report_reviewed : null,
-            reportDelivered: response.data[0].report_delivered ? response.data[0].report_delivered : null}})
-        }
-
-      })
-      .catch(error=>{
-
-      })
-  }
-
-  //user and admin both can mark report for review
-  const handleMarkForReview = async() =>{
-
-    await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
-
-    await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReadyReview',{
-      report_id:reportContextData.reportId,
-      employee_id:reportContextData.employeeId
-    })
-      .then(async response=>{
-        if(response.data && response.data.rowCount===1){
-          await handleGetReportStatus()
-          await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
-          Swal.fire({
-            position: "top-end",
-            icon: "success",
-            title: "Report is Under Review",
-            showConfirmButton: false,
-            timer: 2000
-          });
-        }
-      })
-      .catch(error=>{})
-  }
-
-  //only admin has access to this method
-  const handleReviewed = async() =>{
-    await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReviewed',{
-      report_id:reportContextData.reportId,
-      employee_id:reportContextData.employeeId
-    })
-      .then(async response=>{
-        if(response.data && response.data.rowCount===1){
-
-          await handleGetReportStatus()
-          await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_REVIEWED)
-
-          Swal.fire({
-            position: "top-end",
-            icon: "success",
-            title: "Report Ready for Delivery",
-            showConfirmButton: false,
-            timer: 2000
-          });
-        }
-      })
-      .catch(error=>{})
-  }
-
-  //user and admin both can mark report delivered
-  const handleMarkDelivered = async() => {
-    await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportDelivered',{
-      report_id:reportContextData.reportId,
-      employee_id:reportContextData.employeeId
-    })
-      .then(async response=>{
-
-         await handleGetReportStatus()
-         await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_DELIVERED)
-
-        if(response.data && response.data.rowCount===1){
-          Swal.fire({
-            position: "top-end",
-            icon: "success",
-            title: "Report status udpated to Delivered",
-            showConfirmButton: false,
-            timer: 2000
-          });
-        }
-      })
-      .catch(error=>{})
-  }
-
-  const reportName = reportContextData.selectedCustomer.length > 0? reportContextData.selectedCustomer[0].customerName+ " "+reportContextData.reportStartDate+" "+reportContextData.reportEndDate: ''
-
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    documentTitle: reportName,
-    copyStyles: true,
-  })
-
-  const handleSendNotificationMail =async(reportStatus)=>{
-
-    const reportId = reportContextData.reportId
-
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+'/mail',{
-      subject:'Report '+reportName+' status has changed to '+reportStatus,
-      to:['siem@a2n.net'],
-      html:`<html>
-                <head>
-                    <title></title>
-                </head>
-                <body>
-                    <p><b>Hi Team</b></p>
-                    <p>Status for report ${reportName} has been changes to ${reportStatus}</p>
-                    <p>Please visit report : <a href="${process.env.NEXT_PUBLIC_REPORT_URL}/${reportId}">Here</a></p>
-                    <p>Thank you, <br/> SIEM Team</p>
-                </body>
-           </html>`
-    }).then(response=>{
-      console.log(response)
-    }).catch(error=>{
-      console.log(error)
-    })
-  }
 
   // const handlePrint = async() =>{
   //   // const pdf = new jsPDF()
@@ -201,7 +71,7 @@ const ComponentReport = ()=>{
       <div className=" w-full h-full grid grid-rows-12 grid-cols-12">
         <div className="row-span-12 col-span-12 overflow-hidden">
           <div className="row-span-1 col-span-12">
-            <ComponentNavigation/>
+            <ComponentNavigation printRef={componentRef}/>
           </div>
           <div ref={componentRef}
                className="w-full h-full overflow-y-scroll no-scrollbar row-span-11 col-span-12 bg-blue-900">

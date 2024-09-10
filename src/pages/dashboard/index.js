@@ -62,18 +62,18 @@ const Index = () => {
   const [offset,setOffset] = useState(0);
 
 
-  const getReports = async () => {
+  const getReports = () => {
 
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/users/getCustomerReports", {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + "/users/getCustomerReports", {
       params: {
         limit: 10,
         offset: 0
       }
     })
-      .then(async response => {
+      .then(response => {
         if (response.data.length > 0) {
           //await setTotalPage(Math.ceil(customerReportList.length / itemsPerPage))
-          await setCustomerReportList(response.data)
+          setCustomerReportList(response.data)
         }
       })
       .catch(error => {
@@ -81,8 +81,8 @@ const Index = () => {
       })
   }
 
-  const getCustomers = async () => {
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/users/getCustomerList')
+  const getCustomers = () => {
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL + '/users/getCustomerList')
       .then(response => {
         if (response.data) {
           setCustomerList(response.data)
@@ -93,7 +93,7 @@ const Index = () => {
       })
   }
 
-  const handlePageChange = async(page) =>{
+  const handlePageChange = (page) =>{
     setCurrentPage(page)
     setInitialStart((Number(page) * Number(process.env.NEXT_PUBLIC_PAGE_LIMIT)) - process.env.NEXT_PUBLIC_PAGE_LIMIT)
   }
@@ -259,59 +259,6 @@ const Index = () => {
         <div className="w-full h-full grid grid-cols-12 grid-rows-12">
           <div className="row-span-1 col-span-12">
             <ComponentNavigation/>
-            {/*<Navbar position="static" isBordered className="bg-white/10 text-white justify-evenly">*/}
-            {/*  <NavbarContent justify="left">*/}
-            {/*    <NavbarBrand>*/}
-            {/*      <Image*/}
-            {/*        className="mx-auto h-10 w-auto"*/}
-            {/*        src="/assets/images/logo_header_a2n.png"*/}
-            {/*        alt="Access 2 Network INC"*/}
-            {/*        width={270}*/}
-            {/*        height={120}*/}
-            {/*      />*/}
-            {/*      /!*<p className="font-bold text-inherit">A2N</p>*!/*/}
-            {/*    </NavbarBrand>*/}
-            {/*  </NavbarContent>*/}
-            {/*  <NavbarContent className="hidden sm:flex gap-4" justify="center">*/}
-            {/*    <NavbarItem isActive>*/}
-            {/*      <Link className="text-white uppercase" href="/dashboard" aria-current="page">*/}
-            {/*        Reports*/}
-            {/*      </Link>*/}
-            {/*    </NavbarItem>*/}
-            {/*    {data && data.user.role === 'admin' ?*/}
-            {/*      <>*/}
-            {/*        <NavbarItem>*/}
-            {/*          <Link className="text-white uppercase" href="/users">*/}
-            {/*            Employees*/}
-            {/*          </Link>*/}
-            {/*        </NavbarItem>*/}
-            {/*      <NavbarItem>*/}
-            {/*        <Link  className="text-white uppercase" href="#" aria-current="page">*/}
-            {/*        Customers*/}
-            {/*        </Link>*/}
-            {/*      </NavbarItem>*/}
-            {/*      <NavbarItem>*/}
-            {/*        <Link className="text-white uppercase" href="#">*/}
-            {/*        Devices*/}
-            {/*        </Link>*/}
-            {/*      </NavbarItem>*/}
-            {/*      </>*/}
-            {/*      : ''}*/}
-            {/*  </NavbarContent>*/}
-            {/*  <NavbarContent justify="right">*/}
-            {/*    <NavbarItem className="hidden lg:flex">*/}
-            {/*      <Dropdown>*/}
-            {/*        <DropdownTrigger>*/}
-            {/*          <User className="text-white" name={data?data.user.name.toUpperCase() : ''} description={data?data.user.role:''} avatarProps={{src:"https://i.pinimg.com/564x/4e/22/be/4e22beef6d94640c45a1b15f4a158b23.jpg"}}/>*/}
-            {/*        </DropdownTrigger>*/}
-            {/*        <DropdownMenu aria-label="profile action">*/}
-            {/*          <DropdownItem>Profile</DropdownItem>*/}
-            {/*          <DropdownItem onClick={handleLogout}>Logout</DropdownItem>*/}
-            {/*        </DropdownMenu>*/}
-            {/*      </Dropdown>*/}
-            {/*    </NavbarItem>*/}
-            {/*  </NavbarContent>*/}
-            {/*</Navbar>*/}
           </div>
           <div className="row-span-12 col-span-12">
             <div className="w-full h-1/6 p-1">

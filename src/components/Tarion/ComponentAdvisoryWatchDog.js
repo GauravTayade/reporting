@@ -1,7 +1,3 @@
-import ComponentPieChart from "@/components/charts/ComponentPieChart";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faArrowUp, faCaretUp} from "@fortawesome/free-solid-svg-icons";
-
 const ComponentEndpointProtection = (props) => {
 
   return (

@@ -54,7 +54,7 @@ export default function Login(){
       console.log(result)
     }
     catch(error){
-
+      console.log(error)
     }
 
   }
