@@ -82,12 +82,10 @@ export default function Report() {
   return (
     <>
       {reportContextData.selectedCustomer.length > 0 && data && data.user ?
-       // <userContext.Provider value={userDataContext}>
         reportContextData.reportDelivered === true ?
           <ComponentReportDelivered/>
           :
           <ComponentReport/>
-        //</userContext.Provider>
         :
         ''
       }

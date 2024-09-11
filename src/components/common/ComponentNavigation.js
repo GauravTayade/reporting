@@ -40,13 +40,13 @@ const ComponentNavigation =(props)=> {
     signOut()
   }
 
-  const handleSendNotificationMail =async(reportStatus)=>{
+  const handleSendNotificationMail =(reportStatus)=>{
 
     const reportId = reportContextData.reportId
 
-    await axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+'/mail',{
+    axios.post(process.env.NEXT_PUBLIC_ES_ENDPOINT_URL+'/mail',{
       subject:'Report '+reportName+' status has changed to '+reportStatus,
-      to:['siem@a2n.net'],
+      to:['taydegauravb@gmail.com'],
       html:`<html>
                 <head>
                     <title></title>
@@ -65,8 +65,8 @@ const ComponentNavigation =(props)=> {
     })
   }
 
-  const handleGetReportStatus = async() =>{
-    await axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportStatus',{params:{
+  const handleGetReportStatus = () =>{
+    axios.get(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportStatus',{params:{
         reportId : reportContextData.reportId
       }})
       .then(response => {
@@ -85,18 +85,18 @@ const ComponentNavigation =(props)=> {
   }
 
   //user and admin both can mark report for review
-  const handleMarkForReview = async() =>{
+  const handleMarkForReview = () =>{
 
-    await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
+    handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
 
-    await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReadyReview',{
+    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReadyReview',{
       report_id:reportContextData.reportId,
       employee_id:reportContextData.employeeId
     })
-      .then(async response=>{
+      .then(response=>{
         if(response.data && response.data.rowCount===1){
-          await handleGetReportStatus()
-          await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
+          handleGetReportStatus()
+          handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_READY_FOR_REVIEW)
           Swal.fire({
             position: "top-end",
             icon: "success",
@@ -110,16 +110,16 @@ const ComponentNavigation =(props)=> {
   }
 
   //only admin has access to this method
-  const handleReviewed = async() =>{
-    await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReviewed',{
+  const handleReviewed = () =>{
+    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportReviewed',{
       report_id:reportContextData.reportId,
       employee_id:reportContextData.employeeId
     })
-      .then(async response=>{
+      .then(response=>{
         if(response.data && response.data.rowCount===1){
 
-          await handleGetReportStatus()
-          await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_REVIEWED)
+          handleGetReportStatus()
+          handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_REVIEWED)
 
           Swal.fire({
             position: "top-end",
@@ -134,15 +134,15 @@ const ComponentNavigation =(props)=> {
   }
 
   //user and admin both can mark report delivered
-  const handleMarkDelivered = async() => {
-    await axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportDelivered',{
+  const handleMarkDelivered = () => {
+    axios.post(process.env.NEXT_PUBLIC_ENDPOINT_URL+'/users/reportDelivered',{
       report_id:reportContextData.reportId,
       employee_id:reportContextData.employeeId
     })
-      .then(async response=>{
+      .then(response=>{
 
-        await handleGetReportStatus()
-        await handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_DELIVERED)
+        handleGetReportStatus()
+        handleSendNotificationMail(process.env.NEXT_PUBLIC_REPORT_STATUS_DELIVERED)
 
         if(response.data && response.data.rowCount===1){
           Swal.fire({
@@ -152,6 +152,10 @@ const ComponentNavigation =(props)=> {
             showConfirmButton: false,
             timer: 2000
           });
+          setTimeout( ()=>{
+              router.push('/dashboard')
+            }
+            ,1900)
         }
       })
       .catch(error=>{})
