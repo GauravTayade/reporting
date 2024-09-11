@@ -1,25 +1,6 @@
 import React, {useContext, useRef} from "react";
 import dynamic from "next/dynamic";
-import ReportContext from "@/context/ReportContext";
-import {
-  Button,
-  Dropdown, DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Link,
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-  User
-} from "@nextui-org/react";
-import Image from "next/image";
 import {signOut, useSession} from "next-auth/react";
-import axios from "axios";
-import Swal from "sweetalert2";
-import {useReactToPrint} from "react-to-print";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faChevronDown, faDatabase, faUser} from "@fortawesome/free-solid-svg-icons";
 import ComponentNavigation from "@/components/common/ComponentNavigation";
 //import jsPDF from "jspdf";
 // import html2PDF from 'jspdf-html2canvas';
